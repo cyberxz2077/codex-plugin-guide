@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512"
+     viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Biohub ESM</title>
+  <desc id="desc">The Chan Zuckerberg Biohub bracketed-o symbol, white on black.</desc>
+  <!--
+    Square app-icon tile built from the official Biohub symbol (Biohub_Symbol_White_RGB.svg).
+    Path data is the unmodified brand asset; the group transform only scales and centres it.
+    White-on-black is one of the three combinations approved in the brand book, and is how
+    the symbol is presented there. The tile is full-bleed because marketplace surfaces apply
+    their own corner masking.
+  -->
+  <rect width="512" height="512" fill="#000000"/>
+  <g id="biohub-mark" fill="#ffffff" transform="translate(28.78 9.62) scale(0.9855)">
+    <path d="M92,422.5V77.5h61.8v25.3h-36.6v294.1h36.6v25.6h-61.8Z"/>
+    <path d="M369.1,77.5v345h-61.8v-25.6h36.6V102.8h-36.6v-25.3h61.8Z"/>
+    <path d="M230.4,298.1c25.3,0,46-18.5,46-47.1s-20.7-46-46-46-46,18.1-46,46,20.7,47.1,46,47.1ZM230.4,343c-50.1,0-91.6-36.6-91.6-92s41.5-91.2,91.6-91.2,91.6,35.8,91.6,91.2-41.8,92-91.6,92Z"/>
+  </g>
+</svg>
