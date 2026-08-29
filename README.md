@@ -1,57 +1,60 @@
-# Codex 插件指南
+# Codex 插件指南 · Codex Plugin Guide
 
-一个独立、中文优先的 Codex 插件目录网站。
+> 面向 Codex 用户的独立中文优先插件目录与使用指南。非 OpenAI 官方项目。
+>
+> An independent, Chinese-first directory and usage guide for Codex plugins. Not affiliated with OpenAI.
 
-## 当前范围
+## 在线站点 · Live site
 
-- 数据源为 Codex 插件首页公开目录。
-- 按原生页面顺序呈现 15 个分类、133 个分类条目。
-- 跨分类去重后共有 130 个独立插件，不把插件内部的 Skill 单独计数。
-- 保留官方名称和图标；卡片首屏保留插件名称下的原生用途短句，并默认展示“产品介绍”；点击“查看完整说明”后再进入使用判断与官方详情。
-- 卡片列数根据可用宽度自动变化，宽屏最多显示五列；默认卡片保持统一高度，产品介绍固定显示四行，鼠标进入较长介绍所在卡片时自动浮动展开，不参与网格排版。
-- 详情区保留“使用类型、Codex 适配、插件构成”三格；必需 App、可选 App、Skill 和 App 模板等实质组成信息放入“插件构成”右下角的详情气泡，不再单独占用第四格。
-- “查看完整说明”使用居中浮层呈现，不再改变卡片高度或挤动其他卡片；点击遮罩或按 Esc 可关闭，浮层内部可独立滚动。
-- 详情浮层采用柔和阴影并把滚动条收进内容区，避免滚动条和硬阴影破坏右侧圆角；浮层底部同时保留官网与开发者信息。
-- 点击卡片外的页面空白会收起已打开的详情浮层和组成信息气泡。
-- 每张卡片可浮动查看官方完整说明、官方示例任务、开发者和官网链接；没有公开链接的插件会明确标注。
-- 展开详情后的顺序固定为：使用类型、Codex 适配、插件构成；适合/不建议/最小验证任务；建议使用路径；官方说明；官方示例任务。产品介绍默认位于卡片外层，组成信息由“插件构成”右下角的详情气泡承载。
-- 使用判断基于官方元数据和工作流场景，不是无证据的星级排名。
-- 支持搜索、按分类查看、勾选插件和生成安装 Prompt。
-- 搜索框与分类导航同处一行，宽屏位于右侧；首页不再重复显示目录标题与额外入口按钮。
-- 分类标签和搜索框使用同一个弹性换行流，由各自真实宽度决定何时换行，不再绑定固定触发尺寸，也不会互相覆盖。
-- 插件图标直接以 56 × 56px 图片呈现，不再额外套白色描边容器，避免图标与容器之间出现漏点或空隙；带透明留白的官方素材仍按原图显示。
-- 顶栏提供浅色/深色主题切换，首次打开跟随系统偏好，手动选择后在本机记忆。
-- 顶栏提供中文/英文切换：中文模式显示官方说明与示例任务的中文译文，英文模式显示官方英文原文和英文界面。
+[打开 Codex 插件指南](https://codex-plugin-guide.cyberxz2077.chatgpt.site)
 
-## 目录更新
+> 当前网站为 Codex Sites 私有部署，仅已授权的 Codex 环境可访问。需要对外分享时，请先配置公开访问权限。
+>
+> The site is currently deployed privately on Codex Sites and is accessible only from an authorized Codex environment. Configure public access before sharing it broadly.
 
-运行以下命令，重新读取当前 Codex 插件首页并生成目录：
+## 中文说明
 
-```bash
-node scripts/sync-catalog.mjs
-```
+### 这是什么
 
-中文分类和说明维护在 `scripts/catalog-translations.mjs`。
+Codex 插件指南把 Codex 插件首页的完整目录整理成更容易理解的中文界面。每个条目保留官方名称和图标，并补充产品简介、Codex 适配判断、插件构成、适合与不建议场景、最小验证任务、建议使用路径、官方说明和官方示例任务。
 
-如果官方说明或示例任务有新增，先运行以下命令补齐中文译文缓存，再重新同步目录：
+它的目标是帮助你先判断“这个插件是什么、在 Codex 中是否值得使用、应该怎样开始”，而不是简单罗列工具或给插件做无证据排名。
 
-```bash
-node scripts/fetch-translations.mjs
-node scripts/sync-catalog.mjs
-```
+### 当前目录范围
 
-英文原文始终保留在生成目录中；中文译文缓存位于 `scripts/catalog-translation-cache.json`，不覆盖官方字段。
+- 按 Codex 插件首页的原生分类与顺序呈现。
+- 当前快照包含 15 个分类、133 个分类条目。
+- 跨分类去重后共有 130 个独立插件；插件内部的 Skill 不单独计数。
+- 中文模式展示翻译后的官方说明与示例任务；英文模式展示官方英文原文和英文界面。
+- 支持分类筛选、关键词搜索、详情浮层、深色主题和安装 Prompt 生成。
 
-## 本地运行
+### 本地运行
 
 ```bash
 npm install
 npm run dev
 ```
 
-打开 `http://localhost:3000/`。
+然后打开 <http://localhost:3000/>。
 
-## 验证
+### 更新目录
+
+从当前 Codex 插件首页重新读取目录并生成数据：
+
+```bash
+node scripts/sync-catalog.mjs
+```
+
+中文分类和说明维护在 `scripts/catalog-translations.mjs`。如果官方说明或示例任务有新增，可先补齐翻译缓存，再重新同步：
+
+```bash
+node scripts/fetch-translations.mjs
+node scripts/sync-catalog.mjs
+```
+
+英文原文始终保留在生成目录中，中文译文缓存位于 `scripts/catalog-translation-cache.json`。
+
+### 验证
 
 ```bash
 npm run lint
@@ -59,4 +62,52 @@ npm run build
 npm audit --omit=dev
 ```
 
-当前项目仅保存在本地。对外部署需要一泽明确确认。
+## English
+
+### What it is
+
+Codex Plugin Guide turns the complete Codex plugin homepage catalog into a more approachable bilingual interface. Each entry keeps the official name and icon, then adds a product overview, Codex-fit assessment, plugin composition, suitable and unsuitable scenarios, a smallest useful verification task, a suggested workflow, the official description, and official example tasks.
+
+The goal is to answer three practical questions before installation: “What is this product?”, “Does it add value inside a Codex workflow?”, and “How should I start using it?” It is not a ranking or an official recommendation list.
+
+### Catalog scope
+
+- Follows the native categories and ordering of the Codex plugin homepage.
+- The current snapshot contains 15 categories and 133 category entries.
+- After cross-category deduplication, there are 130 distinct plugins. Skills bundled inside a plugin are not counted as separate plugins.
+- Chinese mode shows translated official descriptions and example tasks; English mode shows the official English originals and an English interface.
+- Includes category filters, keyword search, detail overlays, dark mode, and installation Prompt generation.
+
+### Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Then open <http://localhost:3000/>.
+
+### Update the catalog
+
+Read the current Codex plugin homepage catalog and regenerate the local data:
+
+```bash
+node scripts/sync-catalog.mjs
+```
+
+Chinese category labels and descriptions are maintained in `scripts/catalog-translations.mjs`. If the official descriptions or example tasks change, refresh the translation cache before syncing again:
+
+```bash
+node scripts/fetch-translations.mjs
+node scripts/sync-catalog.mjs
+```
+
+The generated catalog always keeps the official English source fields. Chinese translations are cached in `scripts/catalog-translation-cache.json`.
+
+### Verification
+
+```bash
+npm run lint
+npm run build
+npm audit --omit=dev
+```
