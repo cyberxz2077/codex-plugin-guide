@@ -8,7 +8,7 @@
 
 ## 在线站点 · Live site
 
-[打开 Codex 插件指南](https://codex-plugin-guide.cyberxz2077.chatgpt.site)
+[打开 Codex 插件指南](https://codex-plugin-guide.cyberxz2077.chatgpt.site/)
 
 > 网站已通过公开地址发布，可直接访问。
 >
