@@ -1,8 +1,10 @@
 # Codex 插件指南 · Codex Plugin Guide
 
-> 面向 Codex 用户的独立中文优先插件目录与使用指南。非 OpenAI 官方项目。
+[![中文](https://img.shields.io/badge/文档-中文-111111?style=flat-square)](#中文说明) [![English](https://img.shields.io/badge/Docs-English-666666?style=flat-square)](#english)
+
+> 面向 Codex 用户的独立插件目录与使用指南。非 OpenAI 官方项目。
 >
-> An independent, Chinese-first directory and usage guide for Codex plugins. Not affiliated with OpenAI.
+> An independent directory and usage guide for Codex plugins. Not affiliated with OpenAI.
 
 ## 在线站点 · Live site
 
