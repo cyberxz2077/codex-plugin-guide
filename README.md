@@ -10,9 +10,9 @@
 
 [打开 Codex 插件指南](https://codex-plugin-guide.cyberxz2077.chatgpt.site)
 
-> 当前网站为 Codex Sites 私有部署，仅已授权的 Codex 环境可访问。需要对外分享时，请先配置公开访问权限。
+> 网站已通过公开地址发布，可直接访问。
 >
-> The site is currently deployed privately on Codex Sites and is accessible only from an authorized Codex environment. Configure public access before sharing it broadly.
+> The site is publicly available at the link above.
 
 ## 中文说明
 
