@@ -1,21 +1,58 @@
-import { catalogSource } from './catalog.generated';
-
-export type CatalogPlugin = (typeof catalogSource.sections)[number]['plugins'][number];
 export type Language = 'zh' | 'en';
-type CatalogSectionSource = (typeof catalogSource.sections)[number];
-export type CatalogSection = Omit<CatalogSectionSource, 'plugins'> & { plugins: readonly CatalogPlugin[] };
-type Catalog = Omit<typeof catalogSource, 'sections'> & { sections: readonly CatalogSection[] };
+export type PluginSummary = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  originalDescription: string;
+  productIntro: string;
+  productIntroEn: string;
+  icon: string;
+  websiteUrl: string | null;
+  developerName: string | null;
+  available: boolean;
+};
 
-// The generated catalog is a readonly tuple with one concrete plugin type per
-// section. Widening only the section/plugin collection keeps the generated
-// source untouched while allowing normal filtering and flatMap operations.
-export const catalog = catalogSource as Catalog;
+export type CatalogPlugin = PluginSummary & {
+  longDescription: string;
+  longDescriptionZh: string;
+  defaultPrompts: string[];
+  defaultPromptsZh: string[];
+  usageType: string;
+  usageTypeEn: string;
+  codexFit: string;
+  codexFitEn: string;
+  pluginType: string;
+  pluginTypeEn: string;
+  requiredApps: string[];
+  optionalApps: string[];
+  skillNames: string[];
+  templateNames: string[];
+  requiredAppCount: number;
+  optionalAppCount: number;
+  skillCount: number;
+  templateCount: number;
+  bestFor: string;
+  bestForEn: string;
+  notFor: string;
+  notForEn: string;
+  proofPrompt: string;
+  proofPromptEn: string;
+  usagePath: string[];
+  usagePathEn: string[];
+};
 
-export const uniquePlugins = Array.from(
-  new Map(catalog.sections.flatMap((section) => section.plugins).map((plugin) => [plugin.id, plugin])).values(),
-);
+export type MarketIndex = {
+  fetchedAt: string;
+  total: number;
+  available: number;
+  latest: { ids: string[]; periodStart: string | null; periodEnd: string; basis: 'homepage' | 'full-market' };
+  featuredIds: string[];
+  categories: { id: string; title: string; titleEn: string; description: string; count: number }[];
+  plugins: PluginSummary[];
+};
 
-export function installationPrompt(selected: readonly CatalogPlugin[], language: Language = 'zh') {
+export function installationPrompt(selected: readonly Pick<PluginSummary, 'name'>[], language: Language = 'zh') {
   const list = selected.map((plugin, index) => `${index + 1}. ${plugin.name}`).join('\n');
   if (language === 'en') {
     return `Use Codex plugin management to check and install the following plugins:\n${list}\n\nRequirements:\n- Search for each plugin by its official name and check whether it is already installed or available. Do not reinstall it.\n- For plugins that are not installed, explain which service they connect to, what data they can read or write, and which permissions they need.\n- Wait for my explicit confirmation before installing or authorizing anything. Do not install plugins outside this list.\n- If more than one result has the same name, show me the candidates instead of guessing.\n- Report the actual status of every plugin at the end.`;

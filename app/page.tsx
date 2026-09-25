@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
-import { catalog, installationPrompt, uniquePlugins, type Language } from './plugins';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { installationPrompt, type CatalogPlugin, type Language, type MarketIndex, type PluginSummary } from './plugins';
 
 type Theme = 'light' | 'dark';
 
@@ -15,8 +15,24 @@ export default function Home() {
   const [copied, setCopied] = useState<'install' | null>(null);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('light');
-  const nativeSectionCount = catalog.sections.filter((section) => section.id !== 'latest').length;
-  const snapshotDate = new Date(catalog.fetchedAt).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+  const [market, setMarket] = useState<MarketIndex | null>(null);
+  const [marketError, setMarketError] = useState(false);
+  const [loadedDetails, setLoadedDetails] = useState<Record<string, CatalogPlugin>>({});
+  const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState(60);
+  const detailsByCategory = useRef<Record<string, Record<string, CatalogPlugin>>>({});
+  const nativeSectionCount = market?.categories.length ?? 0;
+  const snapshotDate = market ? new Date(market.fetchedAt).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' }) : '—';
+
+  useEffect(() => {
+    fetch('/catalog/market-index.json').then((response) => {
+      if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
+      return response.json() as Promise<MarketIndex>;
+    }).then((data: MarketIndex) => setMarket(data)).catch(() => setMarketError(true));
+  }, []);
+
+  const changeCategory = (id: string) => { setActiveCategory(id); setDisplayLimit(60); setOpenDetails(null); };
+  const changeQuery = (value: string) => { setQuery(value); setDisplayLimit(60); setOpenDetails(null); };
 
   const copy = language === 'zh' ? {
     switchLabel: '切换为英文',
@@ -24,21 +40,25 @@ export default function Home() {
     themeDark: '深色',
     switchTheme: theme === 'dark' ? '切换为浅色主题' : '切换为深色主题',
     brand: 'Codex 插件指南',
-    snapshot: `${nativeSectionCount} 类 · ${catalog.uniquePlugins} 个插件 · ${snapshotDate}`,
+    snapshot: `${nativeSectionCount} 类 · ${market?.total ?? '…'} 个插件 · ${snapshotDate}`,
     eyebrow: 'CODEX PLUGIN DIRECTORY · 中文版',
     heroTitle: '插件是做什么的，',
     heroTitleSecond: '不必再猜。',
-    heroBody: '按照 Codex 原生插件页面的分类与顺序，完整整理当前首页展示的全部插件。保留官方名称与图标，补上中文用途说明，并可直接生成安装 Prompt。',
+    heroBody: '按 Codex 插件市场的全部公开分类整理插件。保留官方名称、图标和说明，补上中文用途介绍，并可生成安装 Prompt。',
     principleLabel: '目录口径',
-    principleTitle: `首页展示 ${catalog.uniquePlugins} 个`,
-    principleBody: `当前 Codex 插件首页共有 ${nativeSectionCount} 个原生分类、${catalog.sectionEntries} 个分类条目；去除跨分类重复后为 ${catalog.uniquePlugins} 个独立插件。`,
-    flowHome: '插件首页',
+    principleTitle: `公开目录 ${market?.total ?? '…'} 个`,
+    principleBody: `首页只是部分陈列；这里统计官方目录 ${nativeSectionCount} 个分类中公开列出的 ${market?.total ?? '…'} 个独立插件。内部 Skill 不重复计数，账号资格可能影响安装。`,
+    flowHome: '插件市场',
     flowCategory: `${nativeSectionCount} 个分类`,
-    flowAll: '全部展开',
+    flowAll: '全量目录',
     categoryAria: '插件分类',
     allCategories: '全部分类',
     searchPlaceholder: '搜索插件或用途',
-    result: (visibleCount: number, showTotal: boolean) => `当前显示 ${visibleCount} 个独立插件${showTotal ? `，分布于 ${nativeSectionCount} 个原生分类` : ''}`,
+    result: (visibleCount: number, totalCount: number) => `当前显示 ${visibleCount} / ${totalCount} 个独立插件`,
+    loadMore: '加载更多插件',
+    unavailable: '当前账号不可用',
+    loading: '正在加载完整目录…',
+    loadError: '目录加载失败，请刷新页面重试。',
     clearFilter: '清除筛选',
     details: '查看完整说明',
     closeDetails: '收起完整说明',
@@ -72,29 +92,33 @@ export default function Home() {
     copiedInstall: '已复制，回 Codex 粘贴',
     copyInstall: '复制安装 Prompt',
     panelNote: 'Prompt 会先检查当前状态与权限，获得你确认后才安装。',
-    footerSource: `数据源：Codex 插件首页公开目录。最后同步：${snapshotDate}。分类条目可能重复出现，同一个插件始终只计一次。`,
-    footerCaveat: '本目录只覆盖插件首页，不包含分类页“查看更多”的全部结果。插件可用性、账号资格与权限会变化；安装结果以 Codex 当时返回为准。',
+    footerSource: `数据源：Codex 插件市场公开列出的全局插件。最后同步：${snapshotDate}。插件内部的 Skill 不单独计数。`,
+    footerCaveat: '首次全市场盘点作为基线；「最新」目前标记上次与本次首页盘点间新出现的插件，不等同于新上架。插件可用性、账号资格与权限会变化；安装结果以 Codex 当时返回为准。',
   } : {
     switchLabel: 'Switch to Chinese',
     themeLight: 'Light',
     themeDark: 'Dark',
     switchTheme: theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme',
     brand: 'Codex Plugin Guide',
-    snapshot: `${nativeSectionCount} categories · ${catalog.uniquePlugins} plugins · ${snapshotDate}`,
+    snapshot: `${nativeSectionCount} categories · ${market?.total ?? '…'} plugins · ${snapshotDate}`,
     eyebrow: 'CODEX PLUGIN DIRECTORY · ENGLISH',
     heroTitle: 'Know what each plugin does,',
     heroTitleSecond: 'before you install it.',
-    heroBody: 'A complete directory of every plugin currently shown on the native Codex plugin page, in the same categories and order. Official names and icons stay intact; descriptions and example prompts can be viewed in Chinese or English.',
+    heroBody: 'Explore every publicly listed plugin across the Codex marketplace categories. Official names, icons, and descriptions stay intact, with Chinese explanations and an installation prompt.',
     principleLabel: 'DIRECTORY SCOPE',
-    principleTitle: `${catalog.uniquePlugins} shown on the home page`,
-    principleBody: `The current Codex plugin home page has ${nativeSectionCount} native categories and ${catalog.sectionEntries} category entries. After deduplication, there are ${catalog.uniquePlugins} unique plugins.`,
-    flowHome: 'Plugin home',
+    principleTitle: `${market?.total ?? '…'} publicly listed`,
+    principleBody: `The homepage shows only a selection. This directory covers ${market?.total ?? '…'} distinct publicly listed plugins in ${nativeSectionCount} marketplace categories. Bundled Skills are not counted separately.`,
+    flowHome: 'Marketplace',
     flowCategory: `${nativeSectionCount} categories`,
-    flowAll: 'Expand all',
+    flowAll: 'Full directory',
     categoryAria: 'Plugin categories',
     allCategories: 'All categories',
     searchPlaceholder: 'Search plugins or use cases',
-    result: (visibleCount: number, showTotal: boolean) => `Showing ${visibleCount} unique plugins${showTotal ? ` across ${nativeSectionCount} native categories` : ''}`,
+    result: (visibleCount: number, totalCount: number) => `Showing ${visibleCount} / ${totalCount} unique plugins`,
+    loadMore: 'Load more plugins',
+    unavailable: 'Unavailable for this account',
+    loading: 'Loading the full catalog…',
+    loadError: 'The catalog could not load. Please refresh the page.',
     clearFilter: 'Clear filters',
     details: 'View full details',
     closeDetails: 'Hide full details',
@@ -128,25 +152,50 @@ export default function Home() {
     copiedInstall: 'Copied — paste it back into Codex',
     copyInstall: 'Copy install prompt',
     panelNote: 'The prompt checks the current state and permissions first, then waits for your confirmation before installing.',
-    footerSource: `Source: the public Codex plugin home directory. Last synced: ${snapshotDate}. Category entries may repeat; each plugin is counted once.`,
-    footerCaveat: 'This snapshot covers the plugin home page, not every result in category pages. Availability, account eligibility, and permissions can change; Codex is authoritative at install time.',
+    footerSource: `Source: globally listed plugins in the Codex marketplace. Last synced: ${snapshotDate}. Skills bundled inside a plugin are not counted separately.`,
+    footerCaveat: 'The first full-market scan is a baseline. “Latest” currently reflects plugins newly shown on the home page, not new releases. Availability and permissions vary; Codex is authoritative at installation.',
   };
 
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleSections = useMemo(() => catalog.sections
-    .filter((section) => activeCategory === 'all' || section.id === activeCategory)
-    .map((section) => ({
-      ...section,
-      plugins: section.plugins.filter((plugin) => !normalizedQuery ||
-        `${plugin.name} ${plugin.description} ${plugin.originalDescription} ${plugin.longDescriptionZh} ${plugin.longDescription} ${plugin.defaultPromptsZh.join(' ')} ${plugin.defaultPrompts.join(' ')}`.toLowerCase().includes(normalizedQuery)),
-    }))
-    .filter((section) => section.plugins.length > 0), [activeCategory, normalizedQuery]);
-
-  const selected = uniquePlugins.filter((plugin) => selectedIds.includes(plugin.id));
-  const visibleCount = new Set(visibleSections.flatMap((section) => section.plugins.map((plugin) => plugin.id))).size;
+  const selected = market?.plugins.filter((plugin) => selectedIds.includes(plugin.id)) ?? [];
+  const { visibleSections, matchingCount } = useMemo(() => {
+    if (!market) return { visibleSections: [], matchingCount: 0 };
+    const ids = activeCategory === 'latest' ? new Set(market.latest.ids) : activeCategory === 'featured' ? new Set(market.featuredIds) : null;
+    const matches = market.plugins.filter((plugin) =>
+      (activeCategory === 'all' || ids?.has(plugin.id) || plugin.category === activeCategory) &&
+      (!normalizedQuery || `${plugin.name} ${plugin.description} ${plugin.originalDescription} ${plugin.productIntro} ${plugin.productIntroEn}`.toLowerCase().includes(normalizedQuery)));
+    const category = market.categories.find((item) => item.id === activeCategory);
+    const section = activeCategory === 'latest' ? {
+      id: 'latest', slug: 'latest', title: '最新', titleEn: 'Latest', description: market.latest.basis === 'homepage' ? '两次首页盘点之间新出现的插件；不代表新上架。' : '相较上次全市场盘点新增的插件。', descriptionEn: market.latest.basis === 'homepage' ? 'Newly shown between homepage snapshots; not necessarily newly released.' : 'New since the last full-market scan.',
+    } : activeCategory === 'featured' ? {
+      id: 'featured', slug: 'featured', title: '精选', titleEn: 'Featured', description: 'Codex 当前首页重点展示的插件。', descriptionEn: 'Plugins currently featured on the Codex home page.',
+    } : category ? {
+      id: category.id, slug: category.id, title: category.title, titleEn: category.titleEn, description: category.description, descriptionEn: category.titleEn,
+    } : {
+      id: 'all', slug: 'all', title: '全部插件', titleEn: 'All plugins', description: '按官方目录顺序展示全部公开列出的插件。', descriptionEn: 'All publicly listed plugins in official catalog order.',
+    };
+    return { visibleSections: matches.length ? [{ ...section, plugins: matches.slice(0, displayLimit) }] : [], matchingCount: matches.length };
+  }, [market, activeCategory, normalizedQuery, displayLimit]);
+  const visibleCount = visibleSections[0]?.plugins.length ?? 0;
   const togglePlugin = (id: string) => setSelectedIds((current) =>
     current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  const toggleDetails = (id: string) => setOpenDetails((current) => current === id ? null : id);
+  const toggleDetails = async (plugin: PluginSummary) => {
+    if (openDetails === plugin.id) { setOpenDetails(null); return; }
+    if (loadedDetails[plugin.id]) { setOpenDetails(plugin.id); return; }
+    setLoadingDetailId(plugin.id);
+    try {
+      if (!detailsByCategory.current[plugin.category]) {
+        const response = await fetch(`/catalog/details-${plugin.category}.json`);
+        if (!response.ok) throw new Error(`Details HTTP ${response.status}`);
+        detailsByCategory.current[plugin.category] = await response.json();
+      }
+      const detail = detailsByCategory.current[plugin.category][plugin.id];
+      if (!detail) throw new Error('Plugin details not found');
+      setLoadedDetails((current) => ({ ...current, [plugin.id]: detail }));
+      setOpenDetails(plugin.id);
+    } catch { setMarketError(true); }
+    finally { setLoadingDetailId(null); }
+  };
 
   useEffect(() => {
     const closeOnBackgroundClick = (event: MouseEvent) => {
@@ -228,46 +277,45 @@ export default function Home() {
       </section>
 
       <nav className="category-nav" aria-label={copy.categoryAria}>
-        <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => setActiveCategory('all')}>{copy.allCategories}</button>
-        {catalog.sections.map((section) => (
-          <button key={section.id} className={activeCategory === section.id ? 'active' : ''} onClick={() => setActiveCategory(section.id)}>
-            {language === 'zh' ? section.title : section.titleEn}<span>{section.plugins.length}</span>
-          </button>
-        ))}
-        <label className="search-field nav-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.searchPlaceholder} /></label>
+        <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => changeCategory('all')}>{copy.allCategories}</button>
+        {market && <button className={activeCategory === 'latest' ? 'active' : ''} onClick={() => changeCategory('latest')}>{language === 'zh' ? '最新' : 'Latest'}<span>{market.latest.ids.length}</span></button>}
+        {market && <button className={activeCategory === 'featured' ? 'active' : ''} onClick={() => changeCategory('featured')}>{language === 'zh' ? '精选' : 'Featured'}<span>{market.featuredIds.length}</span></button>}
+        {market?.categories.map((category) => <button key={category.id} className={activeCategory === category.id ? 'active' : ''} onClick={() => changeCategory(category.id)}>{language === 'zh' ? category.title : category.titleEn}<span>{category.count}</span></button>)}
+        <label className="search-field nav-search"><span>⌕</span><input value={query} onChange={(event) => changeQuery(event.target.value)} placeholder={copy.searchPlaceholder} /></label>
       </nav>
 
       <section className="catalog-layout" id="catalog">
         <div className="catalog-main">
           <div className="result-line">
-            <span>{copy.result(visibleCount, activeCategory === 'all' && !query)}</span>
-            {(query || activeCategory !== 'all') && <button onClick={() => { setQuery(''); setActiveCategory('all'); }}>{copy.clearFilter}</button>}
+            <span>{market ? copy.result(visibleCount, matchingCount) : marketError ? copy.loadError : copy.loading}</span>
+            {(query || activeCategory !== 'all') && <button onClick={() => { changeQuery(''); changeCategory('all'); }}>{copy.clearFilter}</button>}
           </div>
 
           <div className="category-sections">
             {visibleSections.map((section) => (
               <section className="plugin-section" key={section.id} id={`category-${section.slug}`}>
                 <div className="plugin-section-heading">
-                  <div><h3>{language === 'zh' ? section.title : section.titleEn}</h3>{section.id === 'latest' && section.periodStart && section.periodEnd ? <small className="section-period">{section.periodStart} — {section.periodEnd}{language === 'zh' ? ' 盘点新增' : ' · Newly surfaced'}</small> : language === 'zh' && <span>{section.titleEn}</span>}</div>
+                  <div><h3>{language === 'zh' ? section.title : section.titleEn}</h3>{section.id === 'latest' && market?.latest.periodStart ? <small className="section-period">{market.latest.periodStart} — {market.latest.periodEnd}{language === 'zh' ? market.latest.basis === 'homepage' ? ' 首页新增' : ' 全市场新增' : market.latest.basis === 'homepage' ? ' · Newly shown on home' : ' · New in marketplace'}</small> : language === 'zh' && <span>{section.titleEn}</span>}</div>
                   <p>{language === 'zh' ? section.description : section.descriptionEn}</p>
-                  <b>{section.plugins.length}</b>
+                  <b>{matchingCount}</b>
                 </div>
                 <div className="plugin-grid">
                   {section.plugins.map((plugin) => {
                     const isSelected = selectedIds.includes(plugin.id);
-                    const detailKey = `${section.id}-${plugin.id}`;
+                    const detailKey = plugin.id;
                     const detailsOpen = openDetails === detailKey;
+                    const fullPlugin = loadedDetails[plugin.id];
                     const introText = language === 'zh' ? plugin.productIntro : plugin.productIntroEn;
                     const introIsLong = introText.length > (language === 'zh' ? 118 : 190);
                     const compositionOpen = openCompositionDetail === detailKey;
-                    const hasCompositionFacts = plugin.requiredAppCount > 0 || plugin.optionalAppCount > 0 || plugin.skillCount > 0 || plugin.templateCount > 0;
+                    const hasCompositionFacts = fullPlugin && (fullPlugin.requiredAppCount > 0 || fullPlugin.optionalAppCount > 0 || fullPlugin.skillCount > 0 || fullPlugin.templateCount > 0);
                     return (
                       <article className={`plugin-card ${isSelected ? 'selected' : ''}`} key={`${section.id}-${plugin.id}`}>
                         <div className="plugin-card-head">
-                          <Image className="plugin-icon" src={plugin.icon} alt="" width={56} height={56} />
-                          <span className="plugin-copy"><strong>{plugin.name}</strong><span>{language === 'zh' ? plugin.description : plugin.originalDescription}</span></span>
-                          <button className="details-toggle" onClick={() => toggleDetails(detailKey)} aria-expanded={detailsOpen} aria-controls={`detail-${detailKey}`}>
-                            {detailsOpen ? copy.closeDetails : copy.details}
+                          <Image className="plugin-icon" src={plugin.icon} alt="" width={56} height={56} unoptimized />
+                          <span className="plugin-copy"><strong>{plugin.name}</strong><span>{language === 'zh' ? plugin.description : plugin.originalDescription}</span>{!plugin.available && <small className="plugin-unavailable">{copy.unavailable}</small>}</span>
+                          <button className="details-toggle" onClick={() => toggleDetails(plugin)} disabled={loadingDetailId === plugin.id} aria-expanded={detailsOpen} aria-controls={`detail-${detailKey}`}>
+                            {loadingDetailId === plugin.id ? '…' : detailsOpen ? copy.closeDetails : copy.details}
                           </button>
                           <button className="plugin-select" onClick={() => togglePlugin(plugin.id)} aria-pressed={isSelected} aria-label={`${isSelected ? copy.removeFromList : copy.addToList}: ${plugin.name}`}>
                             <span className={`check ${isSelected ? 'checked' : ''}`} aria-hidden="true">{isSelected ? '✓' : '＋'}</span>
@@ -277,43 +325,43 @@ export default function Home() {
                           <span>{copy.productIntro}</span>
                           <p>{introText}</p>
                         </div>
-                        {detailsOpen && <div className="details-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenDetails(null); }}>
+                        {detailsOpen && fullPlugin && <div className="details-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenDetails(null); }}>
                           <section className="plugin-details floating-details" id={`detail-${detailKey}`} role="dialog" aria-modal="true" aria-labelledby={`detail-title-${detailKey}`} onMouseDown={(event) => event.stopPropagation()}>
                             <header className="floating-details-head">
-                              <Image className="plugin-icon" src={plugin.icon} alt="" width={56} height={56} />
+                              <Image className="plugin-icon" src={plugin.icon} alt="" width={56} height={56} unoptimized />
                               <div><strong id={`detail-title-${detailKey}`}>{plugin.name}</strong><span>{language === 'zh' ? plugin.description : plugin.originalDescription}</span></div>
                               <button onClick={() => setOpenDetails(null)} aria-label={copy.closeDetails}>×</button>
                             </header>
                             <div className="floating-details-body">
                               <div className="fit-grid">
-                                <div><span>{copy.usageType}</span><strong>{language === 'zh' ? plugin.usageType : plugin.usageTypeEn}</strong></div>
-                                <div><span>{copy.codexFit}</span><strong>{language === 'zh' ? plugin.codexFit : plugin.codexFitEn}</strong></div>
+                                <div><span>{copy.usageType}</span><strong>{language === 'zh' ? fullPlugin.usageType : fullPlugin.usageTypeEn}</strong></div>
+                                <div><span>{copy.codexFit}</span><strong>{language === 'zh' ? fullPlugin.codexFit : fullPlugin.codexFitEn}</strong></div>
                                 <div className="composition-cell">
                                   <span>{copy.composition}</span>
-                                  <strong>{language === 'zh' ? plugin.pluginType : plugin.pluginTypeEn}</strong>
+                                  <strong>{language === 'zh' ? fullPlugin.pluginType : fullPlugin.pluginTypeEn}</strong>
                                   <div className="composition-popover">
                                     <button className="composition-detail-trigger" onClick={() => setOpenCompositionDetail(compositionOpen ? null : detailKey)} aria-expanded={compositionOpen} aria-controls={`composition-${detailKey}`}>{compositionOpen ? copy.hideComponentDetails : copy.componentDetails}</button>
                                     {compositionOpen && <div className="composition-popover-panel" id={`composition-${detailKey}`} role="dialog" aria-label={`${plugin.name} ${copy.componentDetails}`}>
-                                      {plugin.requiredAppCount > 0 && <dl><dt>{copy.requiredApp}</dt><dd>{plugin.requiredApps.length > 0 ? plugin.requiredApps.join(' · ') : copy.unnamed(plugin.requiredAppCount)}</dd></dl>}
-                                      {plugin.optionalAppCount > 0 && <dl><dt>{copy.optionalApp}</dt><dd>{plugin.optionalApps.length > 0 ? plugin.optionalApps.join(' · ') : copy.unnamed(plugin.optionalAppCount)}</dd></dl>}
-                                      {plugin.skillCount > 0 && <dl><dt>{copy.skillLabel}</dt><dd>{plugin.skillNames.length > 0 ? plugin.skillNames.join(' · ') : copy.unnamed(plugin.skillCount)}</dd></dl>}
-                                      {plugin.templateCount > 0 && <dl><dt>{copy.templateLabel}</dt><dd>{plugin.templateNames.length > 0 ? plugin.templateNames.join(' · ') : copy.unnamed(plugin.templateCount)}</dd></dl>}
+                                      {fullPlugin.requiredAppCount > 0 && <dl><dt>{copy.requiredApp}</dt><dd>{fullPlugin.requiredApps.length > 0 ? fullPlugin.requiredApps.join(' · ') : copy.unnamed(fullPlugin.requiredAppCount)}</dd></dl>}
+                                      {fullPlugin.optionalAppCount > 0 && <dl><dt>{copy.optionalApp}</dt><dd>{fullPlugin.optionalApps.length > 0 ? fullPlugin.optionalApps.join(' · ') : copy.unnamed(fullPlugin.optionalAppCount)}</dd></dl>}
+                                      {fullPlugin.skillCount > 0 && <dl><dt>{copy.skillLabel}</dt><dd>{fullPlugin.skillNames.length > 0 ? fullPlugin.skillNames.join(' · ') : copy.unnamed(fullPlugin.skillCount)}</dd></dl>}
+                                      {fullPlugin.templateCount > 0 && <dl><dt>{copy.templateLabel}</dt><dd>{fullPlugin.templateNames.length > 0 ? fullPlugin.templateNames.join(' · ') : copy.unnamed(fullPlugin.templateCount)}</dd></dl>}
                                       {!hasCompositionFacts && <p>{copy.noComponents}</p>}
                                     </div>}
                                   </div>
                                 </div>
                               </div>
                               <div className="detail-judgment">
-                                <p><span>{copy.suitable}</span><span className="judgment-body">{language === 'zh' ? plugin.bestFor : plugin.bestForEn}</span></p>
-                                <p><span>{copy.notRecommended}</span><span className="judgment-body">{language === 'zh' ? plugin.notFor : plugin.notForEn}</span></p>
-                                <p><span>{copy.proof}</span><span className="judgment-body"><q>{language === 'zh' ? plugin.proofPrompt : plugin.proofPromptEn}</q></span></p>
+                                <p><span>{copy.suitable}</span><span className="judgment-body">{language === 'zh' ? fullPlugin.bestFor : fullPlugin.bestForEn}</span></p>
+                                <p><span>{copy.notRecommended}</span><span className="judgment-body">{language === 'zh' ? fullPlugin.notFor : fullPlugin.notForEn}</span></p>
+                                <p><span>{copy.proof}</span><span className="judgment-body"><q>{language === 'zh' ? fullPlugin.proofPrompt : fullPlugin.proofPromptEn}</q></span></p>
                               </div>
                               <div className="usage-path">
                                 <span>{copy.usagePath}</span>
-                                <ol>{(language === 'zh' ? plugin.usagePath : plugin.usagePathEn).map((step) => <li key={step}>{step}</li>)}</ol>
+                                <ol>{(language === 'zh' ? fullPlugin.usagePath : fullPlugin.usagePathEn).map((step) => <li key={step}>{step}</li>)}</ol>
                               </div>
-                              <p className="detail-original"><span>{copy.officialDescription}</span><span className="detail-body">{language === 'zh' ? plugin.longDescriptionZh : plugin.longDescription}</span></p>
-                              {plugin.defaultPrompts.length > 0 && <div className="official-prompts"><span>{copy.officialPrompts}</span><ul>{(language === 'zh' ? plugin.defaultPromptsZh : plugin.defaultPrompts).map((prompt) => <li key={prompt}>{prompt}</li>)}</ul></div>}
+                              <p className="detail-original"><span>{copy.officialDescription}</span><span className="detail-body">{language === 'zh' ? fullPlugin.longDescriptionZh : fullPlugin.longDescription}</span></p>
+                              {fullPlugin.defaultPrompts.length > 0 && <div className="official-prompts"><span>{copy.officialPrompts}</span><ul>{(language === 'zh' ? fullPlugin.defaultPromptsZh : fullPlugin.defaultPrompts).map((prompt) => <li key={prompt}>{prompt}</li>)}</ul></div>}
                               <div className="floating-details-footer">
                                 {plugin.websiteUrl ? <a href={plugin.websiteUrl} target="_blank" rel="noreferrer">{copy.visitWebsite}</a> : <span>{copy.noWebsite}</span>}
                                 {plugin.developerName && <span>{copy.developer}: {plugin.developerName}</span>}
@@ -333,14 +381,15 @@ export default function Home() {
             ))}
           </div>
 
-          {visibleSections.length === 0 && <div className="no-results"><strong>{copy.noResultsTitle}</strong><p>{copy.noResultsBody}</p></div>}
+          {matchingCount > visibleCount && <button className="load-more" onClick={() => setDisplayLimit((current) => current + 60)}>{copy.loadMore} · {matchingCount - visibleCount}</button>}
+          {market && visibleSections.length === 0 && <div className="no-results"><strong>{copy.noResultsTitle}</strong><p>{copy.noResultsBody}</p></div>}
         </div>
 
         <aside className="selection-panel">
           <div className="selection-title"><span>{copy.installList}</span><strong>{selected.length}</strong></div>
           {selected.length === 0 ? <div className="empty-selection"><span>＋</span><p>{copy.emptySelection}</p></div> : (
             <div className="selected-list">{selected.map((plugin) => (
-              <button key={plugin.id} onClick={() => togglePlugin(plugin.id)}><Image src={plugin.icon} alt="" width={23} height={23} /><span>{plugin.name}</span><i>×</i></button>
+              <button key={plugin.id} onClick={() => togglePlugin(plugin.id)}><Image src={plugin.icon} alt="" width={23} height={23} unoptimized /><span>{plugin.name}</span><i>×</i></button>
             ))}</div>
           )}
           <button className="copy-button" disabled={!selected.length} onClick={() => copyText(installationPrompt(selected, language), 'install')}>

@@ -54,7 +54,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible {
 .plugin-section-heading span { color:var(--muted); font-size:11px; }
 .plugin-section-heading .section-period { display:block; margin-top:4px; color:var(--muted); font-size:11px; font-weight:400; letter-spacing:0; white-space:nowrap; }
 .plugin-section-heading p { margin:0; color:var(--muted); font-size:12px; }
-.plugin-section-heading b { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--ink); color:#fff; font-size:11px; }
+.plugin-section-heading b { display:grid; place-items:center; min-width:28px; height:28px; padding:0 8px; border-radius:999px; background:var(--ink); color:#fff; font-size:11px; }
 .plugin-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:12px; margin-top:12px; align-items:start; }
 .plugin-card { position:relative; display:flex; min-width:0; height:274px; flex-direction:column; padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--card); transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
 .plugin-card:hover { z-index:30; border-color:#aaa89e; box-shadow:0 8px 22px rgba(23,23,21,.10); }
@@ -67,6 +67,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible {
 .plugin-copy { display:flex; min-width:0; flex:1; flex-direction:column; gap:5px; }
 .plugin-copy strong { overflow:hidden; font-size:15px; text-overflow:ellipsis; white-space:nowrap; }
 .plugin-copy>span { display:-webkit-box; min-height:34px; overflow:hidden; color:var(--muted); font-size:12px; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.plugin-unavailable { width:max-content; color:#a34c31; font-size:10px; font-weight:700; }
+.load-more { display:block; min-height:44px; margin:22px auto 0; padding:0 18px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); cursor:pointer; font-weight:700; }
+.load-more:hover { border-color:var(--ink); }
 .check { display:grid; place-items:center; width:24px; height:24px; flex:0 0 24px; border:1px solid #c9c7bf; border-radius:7px; color:#77766f; font-size:14px; }
 .check.checked { border-color:var(--ink); background:var(--ink); color:#fff; }
 .plugin-details { color:#4d4b45; font-size:12px; line-height:1.6; }

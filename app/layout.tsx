@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:3000'),
-  title: 'Codex 插件指南｜中文精选',
-  description: '用中文了解 Codex 插件用途，按任务筛选并生成安全的安装 Prompt。',
+  metadataBase: new URL('https://codex-plugin-guide.cyberxz2077.chatgpt.site/'),
+  title: 'Codex 插件指南｜全量目录',
+  description: '用中文浏览 Codex 插件市场的全部公开插件，按分类和任务检索并生成安全的安装 Prompt。',
   openGraph: {
-    title: 'Codex 插件指南｜中文精选',
-    description: '先说你要做什么，再决定装什么。用中文筛选插件并生成安装 Prompt。',
+    title: 'Codex 插件指南｜全量目录',
+    description: '浏览 Codex 插件市场全部公开插件，了解用途与组成，再决定装什么。',
     type: 'website',
     images: [
       {
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Codex 插件指南｜中文精选',
-    description: '先说你要做什么，再决定装什么。',
+    title: 'Codex 插件指南｜全量目录',
+    description: '先了解插件用途，再决定装什么。',
     images: ['/og.png'],
   },
 };
