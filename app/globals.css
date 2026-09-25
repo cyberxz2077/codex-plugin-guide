@@ -52,6 +52,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible {
 .plugin-section-heading { display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:end; padding:0 0 14px; border-bottom:1px solid var(--ink); }
 .plugin-section-heading h3 { margin:0; font-size:27px; letter-spacing:-.045em; }
 .plugin-section-heading span { color:var(--muted); font-size:11px; }
+.plugin-section-heading .section-period { display:block; margin-top:4px; color:var(--muted); font-size:11px; font-weight:400; letter-spacing:0; white-space:nowrap; }
 .plugin-section-heading p { margin:0; color:var(--muted); font-size:12px; }
 .plugin-section-heading b { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--ink); color:#fff; font-size:11px; }
 .plugin-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:12px; margin-top:12px; align-items:start; }

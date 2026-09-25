@@ -25,8 +25,10 @@ Codex 插件指南把 Codex 插件首页的完整目录整理成更容易理解�
 ### 当前目录范围
 
 - 按 Codex 插件首页的原生分类与顺序呈现。
-- 当前快照包含 15 个分类、133 个分类条目。
-- 跨分类去重后共有 130 个独立插件；插件内部的 Skill 不单独计数。
+- 2026-09-26 快照包含 17 个原生分类、153 个分类条目。
+- 跨分类去重后共有 142 个独立插件；插件内部的 Skill 不单独计数。
+- 「最新」是按两次快照的插件 ID 差集生成的更新区，本次显示 2026-08-28 至 2026-09-26 新出现在首页的 50 个插件；它不计入原生分类数量。
+- [查看当前全部插件清单（名称、官网、中文简介）](docs/当前插件目录.md)。
 - 中文模式展示翻译后的官方说明与示例任务；英文模式展示官方英文原文和英文界面。
 - 支持分类筛选、关键词搜索、详情浮层、深色主题和安装 Prompt 生成。
 
@@ -75,8 +77,10 @@ The goal is to answer three practical questions before installation: “What is 
 ### Catalog scope
 
 - Follows the native categories and ordering of the Codex plugin homepage.
-- The current snapshot contains 15 categories and 133 category entries.
-- After cross-category deduplication, there are 130 distinct plugins. Skills bundled inside a plugin are not counted as separate plugins.
+- The 2026-09-26 snapshot contains 17 native categories and 153 category entries.
+- After cross-category deduplication, there are 142 distinct plugins. Skills bundled inside a plugin are not counted as separate plugins.
+- “Latest” is generated from the plugin-ID difference between snapshots. This update shows 50 plugins newly appearing on the home page between 2026-08-28 and 2026-09-26; it is not counted as a native category.
+- [View the current complete catalog (name, official site, Chinese overview)](docs/当前插件目录.md).
 - Chinese mode shows translated official descriptions and example tasks; English mode shows the official English originals and an English interface.
 - Includes category filters, keyword search, detail overlays, dark mode, and installation Prompt generation.
 

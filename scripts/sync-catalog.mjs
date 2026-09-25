@@ -3,6 +3,14 @@ import { categoryTranslations, descriptionTranslations } from './catalog-transla
 
 const endpoint = 'https://chatgpt.com/backend-api/ps/plugins/home';
 const feedPath = process.env.CODEX_PLUGIN_HOME_FEED;
+const generatedCatalogPath = new URL('../app/catalog.generated.ts', import.meta.url);
+let previousCatalog = null;
+try {
+  previousCatalog = JSON.parse((await readFile(generatedCatalogPath, 'utf8'))
+    .replace(/^.*?= /s, '').replace(/ as const;\s*$/, ''));
+} catch {
+  // The initial sync has no previous homepage snapshot to compare.
+}
 let source;
 if (feedPath) {
   source = JSON.parse(await readFile(feedPath, 'utf8'));
@@ -40,15 +48,37 @@ for (const section of source.sections) {
 }
 
 const iconPaths = new Map();
-await Promise.all([...unique.values()].map(async (plugin) => {
-  const iconResponse = await fetch(plugin.icon_url);
-  if (!iconResponse.ok) throw new Error(`Icon request failed for ${plugin.display_name}`);
-  const contentType = iconResponse.headers.get('content-type') ?? '';
-  const extension = contentType.includes('svg') ? 'svg' : contentType.includes('webp') ? 'webp' : contentType.includes('jpeg') ? 'jpg' : 'png';
-  const filename = `${plugin.id.replace(/[^a-zA-Z0-9_-]/g, '-')}.${extension}`;
-  await writeFile(new URL(filename, assetsDir), Buffer.from(await iconResponse.arrayBuffer()));
-  iconPaths.set(plugin.id, `/plugin-icons/${filename}`);
-}));
+const icons = [...unique.values()];
+for (let offset = 0; offset < icons.length; offset += 6) {
+  await Promise.all(icons.slice(offset, offset + 6).map(async (plugin) => {
+    let iconResponse;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        iconResponse = await fetch(plugin.icon_url);
+        if (iconResponse.ok) break;
+        throw new Error(`HTTP ${iconResponse.status}`);
+      } catch (error) {
+        if (attempt === 4) throw new Error(`Icon request failed for ${plugin.display_name}: ${error.message}`);
+        await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+      }
+    }
+    const contentType = iconResponse.headers.get('content-type') ?? '';
+    const extension = contentType.includes('svg') ? 'svg' : contentType.includes('webp') ? 'webp' : contentType.includes('jpeg') ? 'jpg' : 'png';
+    const filename = `${plugin.id.replace(/[^a-zA-Z0-9_-]/g, '-')}.${extension}`;
+    await writeFile(new URL(filename, assetsDir), Buffer.from(await iconResponse.arrayBuffer()));
+    iconPaths.set(plugin.id, `/plugin-icons/${filename}`);
+  }));
+}
+
+// The public homepage does not expose a website URL. Keep these verified
+// first-party destinations only for records absent from the detail cache.
+const websiteOverrides = {
+  Gusto: 'https://gusto.com/',
+  Ramp: 'https://ramp.com/',
+  MyFitnessPal: 'https://www.myfitnesspal.com/',
+  Finances: 'https://help.openai.com/en/articles/20001222-finances-in-chatgpt',
+  Health: 'https://help.openai.com/en/articles/20001036-health-in-chatgpt',
+};
 
 const editorialOverrides = {
   base44: {
@@ -131,6 +161,63 @@ const productIntroOverrides = {
     zh: 'Base44 是一个通过自然语言生成和托管全栈应用的平台，包含页面、数据实体、后端函数和部署能力；在 Codex 中更适合跨工具开发、调试和验证已有 Base44 项目，而不是给简单建站任务再套一层代理。',
     en: 'Base44 is a platform for generating and hosting full-stack apps from natural language, including pages, data entities, backend functions, and deployment; in Codex it is best used for cross-tool development, debugging, and verification of an existing Base44 project rather than wrapping a simple build in another agent.',
   },
+  health: { zh: 'Health 是 ChatGPT 的健康数据连接与探索功能，可把个人健康资料带入对话。涉及敏感数据，应先确认账号资格、连接范围和隐私设置。' },
+  exa: { zh: 'Exa 是面向 AI 应用的搜索引擎与网页内容接口，帮助 Agent 查找网页、提取内容并获取研究资料；在 Codex 中适合需要外部网页证据的任务。' },
+  hubspot: { zh: 'HubSpot 是集 CRM、营销、销售和客户服务于一体的平台，用于管理客户资料与业务流程；在 Codex 中适合查询获授权的 CRM 数据并整理后续行动。' },
+  stripe: { zh: 'Stripe 是在线支付与财务基础设施平台，帮助企业收款、管理订阅和查看收入；在 Codex 中适合处理有明确权限边界的支付与业务数据任务。' },
+  shopify: { zh: 'Shopify 是电商建店与运营平台，可管理商品、订单、库存和销售渠道；在 Codex 中适合处理已有店铺的数据查询或明确的运营操作。' },
+  'remote desktop commander': { zh: 'Remote Desktop Commander 通过用户授权的远程连接，让 Codex 查看另一台电脑的文件、执行终端命令并处理文档；适合确实需要跨设备操作的任务。' },
+  'chatgpt ads manager': { zh: 'ChatGPT Ads Manager 是广告账户管理工具，可查看和调整广告活动、广告组、素材及效果数据；在 Codex 中适合围绕投放结果做分析和明确的运营操作。' },
+  'stack overflow for agents': { zh: 'Stack Overflow For Agents 是面向 AI Agent 的技术知识交流网络。Agent 可以读取、回复和验证其他 Agent 分享的解决办法，用于减少重复排查。' },
+  tableau: { zh: 'Tableau 是数据可视化与商业智能平台；其插件让 Codex 搜索工作簿和数据源、查询指标，并在获得授权后修改或发布可视化内容。' },
+  'microsoft power bi': { zh: 'Microsoft Power BI 是微软的数据分析与报表平台。此插件通过本地浏览器操作报表、图表和仪表板，适合需要在现有 Power BI 环境中分析与制作内容的任务。' },
+  data: { zh: 'Data 是 OpenAI 提供的数据分析插件，可连接已有数据仓库、商业智能工具与文档，调查业务指标变化，并把结果整理成图表、报表或建议。' },
+  metricool: { zh: 'Metricool 是社交媒体管理平台，帮助团队分析账号表现、查看排期、寻找合适发布时间，并制作或更新社交媒体内容。' },
+  inductive: { zh: 'Inductive 是 Inductive Bio 的药物发现工具，通过 ADMET 模型预测分子的吸收、分布、代谢、排泄和毒性相关性质，帮助研究人员筛选候选化合物。' },
+  'aws data analytics': { zh: 'AWS Data Analytics 汇集 AWS 数据湖与分析工具的工作流，涉及 S3 Tables、Glue 和 Athena；在 Codex 中可辅助梳理数据资产、ETL 与查询任务。' },
+  clickhouse: { zh: 'ClickHouse 是面向实时分析的数据库平台。插件可检查 ClickHouse Cloud 的组织、服务、表与备份，并执行只读 SQL 查询。' },
+  firebase: { zh: 'Firebase 是 Google 的应用后端平台，提供数据库、身份认证、托管等服务；其插件让 Codex 配置项目、查询 Firestore、检查规则并协助部署。' },
+  'thoughtspot spotter': { zh: 'ThoughtSpot Spotter 是自然语言数据分析助手，让业务团队对已连接的数据提问、追查指标变化并验证分析结果。' },
+  dropbox: { zh: 'Dropbox 是云端文件存储与共享平台。插件可在 Codex 中查找文件、处理内容、保存生成结果或创建分享链接。' },
+  gusto: { zh: 'Gusto 是面向企业的薪资与人事平台，处理发薪、员工资料和福利。插件可把这些数据带入 Codex，以便检查发薪变化和准备人事工作。' },
+  wix: { zh: 'Wix 是在线建站平台，可生成、编辑和托管网站；在 Codex 中适合把内容与设计要求交给 Wix 建站流程处理。' },
+  firecrawl: { zh: 'Firecrawl 是网页数据采集工具，可搜索网站、提取页面和文档内容，并进行多页抓取或结构化研究。' },
+  invideo: { zh: 'invideo 是文本驱动的视频制作平台，把脚本、画面、配音和音乐整合为可分享的视频。' },
+  'ai voice generator': { zh: 'AI Voice Generator 是文字转语音工具，可根据脚本生成自然配音并返回音频文件，适合旁白和口播素材制作。' },
+  viewmax: { zh: 'Viewmax 是面向社交媒体的视频制作平台，可生成和编辑短视频、图片、配音、广告素材和字幕。' },
+  railway: { zh: 'Railway 是应用部署平台，围绕项目、服务与运行状态管理开发环境；插件让 Codex 创建部署、检查性能并排查故障。' },
+  render: { zh: 'Render 是云端应用托管平台。插件可查看服务、部署、日志和指标，也可管理数据库与环境变量。' },
+  hatchable: { zh: 'Hatchable 是全栈应用托管平台，可配置数据库、部署后端函数并管理网站；适合已有应用需要发布和维护的流程。' },
+  appdeploy: { zh: 'AppDeploy 帮助用户构建和发布 Web 应用，并管理版本、部署结果、后端密钥和自定义域名。' },
+  lusha: { zh: 'Lusha 是 B2B 销售情报平台，提供公司资料、联系人和采购信号；插件适合在 Codex 中查询与整理潜在客户信息。' },
+  highlevel: { zh: 'HighLevel 是面向代理商的 CRM 与营销自动化平台。插件可读取联系人、商机、预约和客户对话，辅助整理跟进工作。' },
+  'helium 10': { zh: 'Helium 10 是面向亚马逊卖家的运营分析平台，可查询关键词、商品 ASIN、广告效果、利润和排名数据。' },
+  amplitude: { zh: 'Amplitude 是产品分析平台，用事件、指标、实验和仪表板理解用户行为；插件让 Codex 查询这些数据并整理洞察。' },
+  'blockscout blockchain data': { zh: 'Blockscout 是区块链浏览与数据平台，可查询多个 EVM 网络上的钱包、交易、代币、NFT 和智能合约信息。' },
+  'rhythm ai personality tuner': { zh: 'Rhythm AI Personality Tuner 用一组偏好设置调整 ChatGPT 的沟通语气、详略和直接程度，更偏向对话体验配置。' },
+  quizlet: { zh: 'Quizlet 是学习卡片平台，可把主题、笔记或文件转换为可复习的卡片集。' },
+  'kahoot!': { zh: 'Kahoot! 是互动测验与课堂活动平台，可把主题、文档或链接生成可参与的选择题活动。' },
+  wolfram: { zh: 'Wolfram 提供数学计算、算法和结构化知识数据；插件让 Codex 调用 Wolfram Language 与 Wolfram|Alpha 处理可计算的问题。' },
+  rowan: { zh: 'Rowan 是计算化学与结构生物学平台，可运行分子性质、构象、反应路径和量子化学模拟。' },
+  pendar: { zh: 'Pendar 是研究领域分析工具，可统计论文规模与增长趋势，识别主要学科、国家及值得优先阅读的论文。' },
+  'ngs analysis workbench': { zh: 'NGS Analysis Workbench 面向二代测序分析，协助设计 FASTQ 质控、RNA-seq 和单细胞 RNA-seq 工作流，并与实际分析工具衔接。' },
+  'genomic intelligence': { zh: 'Genomic Intelligence 提供 DNA 序列分析能力，可预测启动子、剪接位点、增强子、染色质状态和基因表达等特征。' },
+  'toolcheck by m8ven': { zh: 'ToolCheck by M8ven 是 MCP 与软件包信任检查工具，可根据代码与行为证据评估连接风险。' },
+  'neura relay mcp': { zh: 'Neura Relay MCP 在 Agent 执行动作前提供审核与记录能力，返回决策凭据和追踪信息，而不直接代替下游执行。' },
+  'is it legit by m8ven': { zh: 'Is It Legit by M8ven 根据品牌名称或网址检查购物网站的信任信号，帮助用户识别可疑商家。' },
+  finances: { zh: 'Finances 是 ChatGPT 的个人财务功能，可连接账户并汇总交易、支出、订阅、投资和负债信息。' },
+  massive: { zh: 'Massive 是金融市场数据服务，可查询股票、期权、期货、指数、外汇与加密资产的实时和历史数据。' },
+  'qbo connector by meridian': { zh: 'QBO Connector by Meridian 连接 QuickBooks Online，可按授权范围读取或更新会计与财务记录。' },
+  ramp: { zh: 'Ramp 是企业支出管理平台，涵盖公司卡片、报销、账单和差旅；插件可在 Codex 中处理获授权的财务任务。' },
+  lifttrack: { zh: 'LiftTrack 是面向 Garmin 用户的力量训练工具，可规划训练、同步手表并追踪动作与进度。' },
+  myfitnesspal: { zh: 'MyFitnessPal 是饮食与运动记录平台；当前插件主要用于生成饮食计划、食谱和个性化营养建议。' },
+  'turkish airlines': { zh: 'Turkish Airlines 是土耳其航空公司的服务插件，可查询航班状态与票价，并协助完成行程规划和订单查询。' },
+  'anywheremap - navigate+locate': { zh: 'AnyWhereMap 是对话内的互动地图工具，可查看地点、缩放地图、放置标记并讨论周边区域。' },
+  'destiny ai astrology': { zh: 'Destiny AI Astrology 根据出生信息生成星盘、运势与个性化占星解读，适合娱乐和自我探索。' },
+  'battleships classic naval game': { zh: 'Battleships Classic Naval Game 把经典海战棋放进对话中，玩家通过猜测坐标寻找并击沉对手舰队。' },
+  drawdash: { zh: 'drawDash 是限时画图猜谜游戏，用户画出指定物品，再让 ChatGPT 猜测。' },
+  'astro scope tarot': { zh: 'Astro Scope Tarot 提供每日牌与过去、现在、未来三张牌占卜，可通过互动界面查看牌义和完整解读。' },
+  autoscout24: { zh: 'AutoScout24 是欧洲汽车交易平台，可浏览新车、二手车与租赁信息，并按车型和条件筛选。' },
 };
 
 function genericProductIntro(name, shortDescription, longDescriptionZh, language) {
@@ -141,8 +228,10 @@ function genericProductIntro(name, shortDescription, longDescriptionZh, language
   }
   const action = String(descriptionTranslations[name] || short || '完成相关工作').replace(/[。！？]+$/, '');
   const detailLead = String(longDescriptionZh || '').split(/[。！？\n]/).map((part) => part.trim()).find(Boolean);
-  const detail = detailLead && !detailLead.includes(action) ? ` 官方说明还提到：${detailLead}。` : '';
-  return `${name} 是一款服务，主要帮助你${action}。${detail}在 Codex 中，它适合在需要读取该服务信息、调用其能力或把结果带回当前任务时使用。`;
+  const detail = detailLead && detailLead.length <= 80 && /[\u4e00-\u9fa5]/.test(detailLead) && !detailLead.includes(action)
+    ? ` ${detailLead}。`
+    : '';
+  return `${name} 的主要用途是${action}。${detail}在 Codex 中，可结合当前任务使用它提供的资料或能力。`;
 }
 
 function derivePluginMeta(plugin, detail) {
@@ -244,7 +333,7 @@ function derivePluginMeta(plugin, detail) {
   };
 }
 
-const sections = source.sections.map((section) => {
+const homepageSections = source.sections.map((section) => {
   const [titleZh, descriptionZh] = categoryTranslations[section.id] ?? [section.title, section.description];
   return {
     id: section.id,
@@ -270,7 +359,7 @@ const sections = source.sections.map((section) => {
           longDescriptionZh,
           productIntro: productOverride.zh ?? genericProductIntro(plugin.display_name, descriptionZh, longDescriptionZh, 'zh'),
           productIntroEn: productOverride.en ?? genericProductIntro(plugin.display_name, plugin.short_description, longDescription, 'en'),
-          websiteUrl: detail?.website_url ?? null,
+          websiteUrl: detail?.website_url ?? websiteOverrides[plugin.display_name] ?? null,
           defaultPrompts,
           defaultPromptsZh: defaultPrompts.map((prompt) => translationMap[prompt] ?? prompt),
           keywords: detail?.keywords ?? plugin.keywords ?? [],
@@ -284,19 +373,92 @@ const sections = source.sections.map((section) => {
       originalDescription: plugin.short_description,
       icon: iconPaths.get(plugin.id),
     })),
+    periodStart: null,
+    periodEnd: null,
   };
 });
 
 const missing = [...unique.values()].filter((plugin) => !descriptionTranslations[plugin.display_name]);
 if (missing.length) throw new Error(`Missing Chinese descriptions: ${missing.map((plugin) => plugin.display_name).join(', ')}`);
 
+const currentById = new Map(homepageSections.flatMap((section) => section.plugins.map((plugin) => [plugin.id, plugin])));
+const previousHomepageSections = (previousCatalog?.sections ?? []).filter((section) => section.id !== 'latest');
+const previousIds = new Set(previousHomepageSections.flatMap((section) => section.plugins.map((plugin) => plugin.id)));
+const addedIds = [...currentById.keys()].filter((id) => !previousIds.has(id));
+const removedIds = [...previousIds].filter((id) => !currentById.has(id));
+const previousLatest = previousCatalog?.sections?.find((section) => section.id === 'latest');
+const latestIds = addedIds.length
+  ? addedIds
+  : (previousLatest?.plugins ?? []).map((plugin) => plugin.id).filter((id) => currentById.has(id));
+const fetchedAt = new Date().toISOString();
+const captureDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+const periodStart = addedIds.length ? previousCatalog?.fetchedAt?.slice(0, 10) : previousLatest?.periodStart;
+const periodEnd = addedIds.length ? captureDate : previousLatest?.periodEnd;
+const comparison = addedIds.length || removedIds.length
+  ? {
+    periodStart: previousCatalog?.fetchedAt?.slice(0, 10) ?? null,
+    periodEnd: captureDate,
+    addedIds,
+    removedPlugins: previousHomepageSections.flatMap((section) => section.plugins)
+      .filter((plugin, index, plugins) => removedIds.includes(plugin.id) && plugins.findIndex((item) => item.id === plugin.id) === index)
+      .map((plugin) => ({ id: plugin.id, name: plugin.name })),
+  }
+  : previousCatalog?.comparison ?? null;
+const latestSection = latestIds.length ? {
+  id: 'latest',
+  slug: 'latest',
+  title: '最新',
+  titleEn: 'Latest',
+  description: '相较上次盘点，新出现在 Codex 插件首页的插件。',
+  descriptionEn: 'Plugins newly appearing on the Codex plugin homepage since the previous snapshot.',
+  plugins: latestIds.map((id) => currentById.get(id)),
+  periodStart,
+  periodEnd,
+} : null;
+const sections = latestSection ? [latestSection, ...homepageSections] : homepageSections;
+const sectionEntries = source.sections.reduce((sum, section) => sum + section.plugins.length, 0);
+
 const generated = `// Generated by scripts/sync-catalog.mjs. Do not edit by hand.\n` +
   `export const catalogSource = ${JSON.stringify({
     endpoint,
-    fetchedAt: new Date().toISOString(),
-    sectionEntries: source.sections.reduce((sum, section) => sum + section.plugins.length, 0),
+    fetchedAt,
+    sectionEntries,
     uniquePlugins: unique.size,
+    comparison,
     sections,
   }, null, 2)} as const;\n`;
-await writeFile(new URL('../app/catalog.generated.ts', import.meta.url), generated);
-console.log(`Synced ${source.sections.length} sections, ${unique.size} unique plugins.`);
+await writeFile(generatedCatalogPath, generated);
+
+const escapeCell = (value) => String(value ?? '').replace(/\|/g, '\\|').replace(/\s*\n+\s*/g, ' ').trim();
+const doc = [
+  '# Codex 插件市场首页目录',
+  '',
+  `盘点日期：${captureDate}。数据源：[Codex 插件首页](${endpoint})。`,
+  '',
+  `口径：${source.sections.length} 个原生分类、${sectionEntries} 个分类条目，跨分类去重后 ${unique.size} 个独立插件。下表按首页分类与顺序排列，同一插件只列一次；插件内部的 Skill 不单独计数。首页陈列变化不等于插件上架或下架。`,
+  '',
+  `与上次盘点（${comparison?.periodStart ?? '无历史快照'}）相比，截至 ${comparison?.periodEnd ?? captureDate} 有 ${comparison?.addedIds.length ?? 0} 个插件 ID 新出现在首页，${comparison?.removedPlugins.length ?? 0} 个旧 ID 不再出现在首页。新增条目在下表以「新」标记。`,
+  '',
+  '官网链接优先采用插件详情中的官网字段；首页未提供官网的少数条目使用已核对的开发者或 OpenAI 官方页面。简介为中文概括，并非官方说明全文。',
+  '',
+];
+const documented = new Set();
+for (const section of homepageSections) {
+  const plugins = section.plugins.filter((plugin) => !documented.has(plugin.id));
+  if (!plugins.length) continue;
+  doc.push(`## ${section.title}`, '', '| 插件名 | 官网链接 | 简介 |', '| --- | --- | --- |');
+  for (const plugin of plugins) {
+    documented.add(plugin.id);
+    const name = `${plugin.name}${latestIds.includes(plugin.id) ? '（新）' : ''}`;
+    const website = plugin.websiteUrl ? `[访问官网](${plugin.websiteUrl})` : '未提供';
+    doc.push(`| ${escapeCell(name)} | ${website} | ${escapeCell(plugin.productIntro)} |`);
+  }
+  doc.push('');
+}
+if (comparison?.removedPlugins.length) {
+  doc.push('## 上次有、这次首页未展示', '', '以下名称来自上次首页快照，仅代表首页陈列变化，不能据此断言插件已下架。', '');
+  doc.push(comparison.removedPlugins.map((plugin) => `- ${plugin.name}`).join('\n'), '');
+}
+await mkdir(new URL('../docs/', import.meta.url), { recursive: true });
+await writeFile(new URL('../docs/当前插件目录.md', import.meta.url), `${doc.join('\n').trimEnd()}\n`);
+console.log(`Synced ${source.sections.length} homepage sections, ${unique.size} unique plugins; ${addedIds.length} newly surfaced, ${removedIds.length} no longer on homepage.`);
