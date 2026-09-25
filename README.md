@@ -25,6 +25,7 @@ Codex 插件指南把 Codex 插件首页的完整目录整理成更容易理解�
 ### 当前目录范围
 
 - 按 Codex 插件首页的原生分类与顺序呈现。
+- 本站快照仅覆盖插件首页展示条目，不包含分类页“查看更多”的所有结果，也不等同于插件市场全量。
 - 2026-09-26 快照包含 17 个原生分类、153 个分类条目。
 - 跨分类去重后共有 142 个独立插件；插件内部的 Skill 不单独计数。
 - 「最新」是按两次快照的插件 ID 差集生成的更新区，本次显示 2026-08-28 至 2026-09-26 新出现在首页的 50 个插件；它不计入原生分类数量。
@@ -77,6 +78,7 @@ The goal is to answer three practical questions before installation: “What is 
 ### Catalog scope
 
 - Follows the native categories and ordering of the Codex plugin homepage.
+- This snapshot covers the home-page entries only, not every result under “See more” or the entire marketplace.
 - The 2026-09-26 snapshot contains 17 native categories and 153 category entries.
 - After cross-category deduplication, there are 142 distinct plugins. Skills bundled inside a plugin are not counted as separate plugins.
 - “Latest” is generated from the plugin-ID difference between snapshots. This update shows 50 plugins newly appearing on the home page between 2026-08-28 and 2026-09-26; it is not counted as a native category.

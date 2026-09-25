@@ -30,7 +30,7 @@ export default function Home() {
     heroTitleSecond: '不必再猜。',
     heroBody: '按照 Codex 原生插件页面的分类与顺序，完整整理当前首页展示的全部插件。保留官方名称与图标，补上中文用途说明，并可直接生成安装 Prompt。',
     principleLabel: '目录口径',
-    principleTitle: `${catalog.uniquePlugins} 个，不是几千个`,
+    principleTitle: `首页展示 ${catalog.uniquePlugins} 个`,
     principleBody: `当前 Codex 插件首页共有 ${nativeSectionCount} 个原生分类、${catalog.sectionEntries} 个分类条目；去除跨分类重复后为 ${catalog.uniquePlugins} 个独立插件。`,
     flowHome: '插件首页',
     flowCategory: `${nativeSectionCount} 个分类`,
@@ -73,7 +73,7 @@ export default function Home() {
     copyInstall: '复制安装 Prompt',
     panelNote: 'Prompt 会先检查当前状态与权限，获得你确认后才安装。',
     footerSource: `数据源：Codex 插件首页公开目录。最后同步：${snapshotDate}。分类条目可能重复出现，同一个插件始终只计一次。`,
-    footerCaveat: '插件可用性、账号资格与权限会变化；安装结果以 Codex 当时返回为准。',
+    footerCaveat: '本目录只覆盖插件首页，不包含分类页“查看更多”的全部结果。插件可用性、账号资格与权限会变化；安装结果以 Codex 当时返回为准。',
   } : {
     switchLabel: 'Switch to Chinese',
     themeLight: 'Light',
@@ -86,7 +86,7 @@ export default function Home() {
     heroTitleSecond: 'before you install it.',
     heroBody: 'A complete directory of every plugin currently shown on the native Codex plugin page, in the same categories and order. Official names and icons stay intact; descriptions and example prompts can be viewed in Chinese or English.',
     principleLabel: 'DIRECTORY SCOPE',
-    principleTitle: `${catalog.uniquePlugins} plugins, not thousands`,
+    principleTitle: `${catalog.uniquePlugins} shown on the home page`,
     principleBody: `The current Codex plugin home page has ${nativeSectionCount} native categories and ${catalog.sectionEntries} category entries. After deduplication, there are ${catalog.uniquePlugins} unique plugins.`,
     flowHome: 'Plugin home',
     flowCategory: `${nativeSectionCount} categories`,
@@ -129,7 +129,7 @@ export default function Home() {
     copyInstall: 'Copy install prompt',
     panelNote: 'The prompt checks the current state and permissions first, then waits for your confirmation before installing.',
     footerSource: `Source: the public Codex plugin home directory. Last synced: ${snapshotDate}. Category entries may repeat; each plugin is counted once.`,
-    footerCaveat: 'Availability, account eligibility, and permissions can change. The result returned by Codex at install time is authoritative.',
+    footerCaveat: 'This snapshot covers the plugin home page, not every result in category pages. Availability, account eligibility, and permissions can change; Codex is authoritative at install time.',
   };
 
   const normalizedQuery = query.trim().toLowerCase();

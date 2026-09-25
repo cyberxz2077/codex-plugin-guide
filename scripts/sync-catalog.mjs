@@ -435,7 +435,7 @@ const doc = [
   '',
   `盘点日期：${captureDate}。数据源：[Codex 插件首页](${endpoint})。`,
   '',
-  `口径：${source.sections.length} 个原生分类、${sectionEntries} 个分类条目，跨分类去重后 ${unique.size} 个独立插件。下表按首页分类与顺序排列，同一插件只列一次；插件内部的 Skill 不单独计数。首页陈列变化不等于插件上架或下架。`,
+  `口径：${source.sections.length} 个原生分类、${sectionEntries} 个首页分类条目，跨分类去重后 ${unique.size} 个独立插件。下表按首页分类与顺序排列，同一插件只列一次；插件内部的 Skill 不单独计数。这不是整个市场的全量清单，分类页“查看更多”可能展示额外插件；首页陈列变化也不等于插件上架或下架。`,
   '',
   `与上次盘点（${comparison?.periodStart ?? '无历史快照'}）相比，截至 ${comparison?.periodEnd ?? captureDate} 有 ${comparison?.addedIds.length ?? 0} 个插件 ID 新出现在首页，${comparison?.removedPlugins.length ?? 0} 个旧 ID 不再出现在首页。新增条目在下表以「新」标记。`,
   '',
