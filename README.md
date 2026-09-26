@@ -24,8 +24,8 @@ Codex 插件指南把 Codex 插件市场公开列出的全量目录整理成更�
 
 ### 当前目录范围
 
-- 覆盖 Codex 官方插件目录中 `GLOBAL` 且 `LISTED` 的插件，按官方分类呈现；不把 `UNLISTED` 记录、内部 Skill 或模板单独计数。
-- 2026-09-26 全市场基线包含 14 个分类、3,894 个独立插件，其中 23 个对当前账号显示不可用。账号、地区和组织策略可能影响实际安装资格。
+- 覆盖官方插件市场全部 17 个分类展开页，包括三个专题分类；按页面实际展示的插件 ID 去重，不把本地缓存总量当作市场可见数量，也不把内部 Skill 或模板单独计数。
+- 2026-09-26 可见全市场基线包含 3,550 个独立插件。缓存确认 3,528 个当前可用、16 个不可用；另 6 个已从官方详情页补齐，Codex 安装资格仍待确认。账号、地区和组织策略可能影响展示及安装资格。
 - 「最新」在首次全量盘点时沿用 2026-08-28 至 2026-09-26 的首页陈列变化，不能等同于新上架；下一次全量盘点起才按全市场插件 ID 对比。
 - [查看当前全部插件清单（名称、官网、中文简介）](docs/当前插件目录.md)。
 - 中文模式优先展示官方说明与示例任务的中文译文；因翻译服务限流而暂缺译文的字段保留官方英文原文，并明确标注“翻译待补”。英文模式展示官方英文原文和英文界面。
@@ -42,12 +42,13 @@ npm run dev
 
 ### 更新目录
 
-先更新首页快照，再使用 Codex 官方插件目录缓存刷新全市场数据：
+先重新读取官方市场全部分类展开页的插件链接，更新 `scripts/visible-market-snapshot.json`（日期、来源和各分类 ID）。本地目录缓存只用来补充元数据，不能替代页面可见清单。缓存缺失的可见插件需要从官方详情页补入 `scripts/visible-market-supplement.json`，否则同步会报错，不会静默漏收。再运行：
 
 ```bash
 node scripts/sync-catalog.mjs
 node scripts/translate-market.mjs
 node scripts/sync-market.mjs
+node scripts/verify-market.mjs
 ```
 
 首页的中文分类和介绍维护在 `scripts/catalog-translations.mjs`。全市场的中文说明与示例由翻译缓存生成，并保留官方英文原文。若只需更新首页的翻译缓存：
@@ -77,8 +78,8 @@ The goal is to answer three practical questions before installation: “What is 
 
 ### Catalog scope
 
-- Covers `GLOBAL`, `LISTED` plugins in the official Codex catalog, grouped by the marketplace's own categories. `UNLISTED` entries, bundled Skills, and templates are not counted separately.
-- The 2026-09-26 full-market baseline has 3,894 distinct plugins in 14 categories; 23 are unavailable for the current account. Eligibility may vary by account, region, or organization.
+- Covers all 17 expanded official marketplace category pages, including the three curated sections, deduplicated by visible plugin ID. Local cache totals are not treated as visitor-visible catalog counts. Bundled Skills and templates are not counted separately.
+- The 2026-09-26 visitor-visible baseline has 3,550 distinct plugins. The cache confirms 3,528 available and 16 unavailable; six more were completed from official detail pages and still need Codex eligibility checks. Visibility and eligibility may vary by account, region, or organization.
 - On the first full-market scan, “Latest” still reflects plugins newly shown between the 2026-08-28 and 2026-09-26 homepage snapshots, not newly released plugins. Future full-market scans compare plugin IDs against this baseline.
 - [View the current complete catalog (name, official site, Chinese overview)](docs/当前插件目录.md).
 - Chinese mode prefers translated official descriptions and example tasks. Fields still pending translation due to service rate limits retain the official English original and are marked accordingly. English mode shows the official originals.
@@ -95,12 +96,13 @@ Then open <http://localhost:3000/>.
 
 ### Update the catalog
 
-Update the homepage snapshot, translate newly found official copy, then refresh the full-market catalog from Codex's official catalog cache:
+First read plugin links from every expanded official category page and update `scripts/visible-market-snapshot.json` with the date, source, and per-category IDs. Use the local catalog cache only for metadata, not to define visibility. Complete visible entries missing from the cache in `scripts/visible-market-supplement.json` using their official detail pages; synchronization fails rather than silently omitting them. Then run:
 
 ```bash
 node scripts/sync-catalog.mjs
 node scripts/translate-market.mjs
 node scripts/sync-market.mjs
+node scripts/verify-market.mjs
 ```
 
 Chinese homepage labels are maintained in `scripts/catalog-translations.mjs`. To refresh only the homepage translation cache:

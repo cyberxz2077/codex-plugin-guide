@@ -10,7 +10,7 @@ export type PluginSummary = {
   icon: string;
   websiteUrl: string | null;
   developerName: string | null;
-  available: boolean;
+  available: boolean | null;
 };
 
 export type CatalogPlugin = PluginSummary & {
@@ -32,6 +32,8 @@ export type CatalogPlugin = PluginSummary & {
   optionalAppCount: number;
   skillCount: number;
   templateCount: number;
+  compositionNote?: string;
+  compositionNoteEn?: string;
   bestFor: string;
   bestForEn: string;
   notFor: string;
@@ -47,8 +49,7 @@ export type MarketIndex = {
   total: number;
   available: number;
   latest: { ids: string[]; periodStart: string | null; periodEnd: string; basis: 'homepage' | 'full-market' };
-  featuredIds: string[];
-  categories: { id: string; title: string; titleEn: string; description: string; count: number }[];
+  categories: { id: string; title: string; titleEn: string; description: string; count: number; ids: string[] }[];
   plugins: PluginSummary[];
 };
 

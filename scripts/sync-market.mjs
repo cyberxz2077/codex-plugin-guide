@@ -1,19 +1,37 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { categoryTranslations } from './catalog-translations.mjs';
 import { readOfficialCatalog } from './catalog-source.mjs';
+import { pageTranslations } from './visible-market-translations.mjs';
 
 const source = await readOfficialCatalog();
 const homepageText = await readFile(new URL('../app/catalog.generated.ts', import.meta.url), 'utf8');
 const homepage = JSON.parse(homepageText.replace(/^.*?= /s, '').replace(/ as const;\s*$/, ''));
 const homepageDetails = new Map(homepage.sections.flatMap((section) => section.plugins.map((plugin) => [plugin.id, plugin])));
-const listed = source.plugins.filter((plugin) => plugin.scope === 'GLOBAL' && plugin.discoverability === 'LISTED');
+const visibleSnapshot = JSON.parse(await readFile(new URL('./visible-market-snapshot.json', import.meta.url), 'utf8'));
+const supplement = JSON.parse(await readFile(new URL('./visible-market-supplement.json', import.meta.url), 'utf8'));
+const visibleIds = new Set(Object.values(visibleSnapshot.categories).flat());
+const catalogRecords = new Map(source.plugins.filter((plugin) => plugin.scope === 'GLOBAL').map((plugin) => [plugin.id, plugin]));
+for (const plugin of supplement.plugins) if (!catalogRecords.has(plugin.id)) catalogRecords.set(plugin.id, plugin);
+const missingIds = [...visibleIds].filter((id) => !catalogRecords.has(id));
+if (missingIds.length) throw new Error(`Visible plugins missing metadata: ${missingIds.join(', ')}`);
+const listed = [...visibleIds].map((id) => catalogRecords.get(id));
 const byId = new Map(listed.map((plugin) => [plugin.id, plugin]));
 if (byId.size !== listed.length) throw new Error('Duplicate plugin IDs in official catalog');
 
 let translations = {};
 try { translations = JSON.parse(await readFile(new URL('./market-translation-cache.json', import.meta.url), 'utf8')); } catch { /* English remains available if translation has not run yet. */ }
+for (const plugin of supplement.plugins) {
+  const translated = pageTranslations[plugin.release.display_name];
+  if (!translated) continue;
+  const official = plugin.release.interface;
+  translations[official.short_description] = translated.short;
+  translations[official.long_description] = translated.long;
+  official.default_prompts.forEach((prompt, index) => { translations[prompt] = translated.prompts[index]; });
+}
 let previous = null;
 try { previous = JSON.parse(await readFile(new URL('../public/catalog/market-index.json', import.meta.url), 'utf8')); } catch { /* First full-market baseline. */ }
+// Cache-only inventories are not a valid previous visitor-visible baseline.
+if (previous?.scope !== 'official-category-pages') previous = null;
 
 const manualShortTranslations = {
   'Sistem toplama ve PC parçaları': '配置电脑整机与零部件。',
@@ -72,8 +90,8 @@ for (const plugin of listed) {
   const apps = Object.entries(release.app_manifest?.apps ?? {});
   const skills = release.skills ?? [];
   const templates = release.app_templates ?? [];
-  const hasApps = apps.length > 0;
-  const hasSkills = skills.length > 0;
+  const hasApps = apps.length > 0 || Boolean(plugin.pageAppName);
+  const hasSkills = skills.length > 0 || plugin.pageSkillCount > 0;
   const required = apps.filter(([, info]) => info.required).map(([label]) => label);
   const optional = apps.filter(([, info]) => !info.required).map(([label]) => label);
   const summary = {
@@ -87,7 +105,7 @@ for (const plugin of listed) {
     icon: known?.icon ?? safeUrl(official.logo_url) ?? fallbackIcon,
     websiteUrl: safeUrl(official.website_url) ?? known?.websiteUrl ?? null,
     developerName: official.developer_name ?? known?.developerName ?? null,
-    available: plugin.status === 'AVAILABLE',
+    available: plugin.status === 'UNVERIFIED' ? null : plugin.status === 'AVAILABLE',
   };
   const prompts = official.default_prompts ?? [];
   const detail = known ? {
@@ -115,8 +133,12 @@ for (const plugin of listed) {
     templateNames: templates.map((template) => template.name).filter(Boolean),
     requiredAppCount: required.length,
     optionalAppCount: optional.length,
-    skillCount: skills.length,
+    skillCount: plugin.pageSkillCount ?? skills.length,
     templateCount: templates.length,
+    ...(plugin.pageAppName ? {
+      compositionNote: `App：${plugin.pageAppName}（官方页面未标明必需或可选）；Codex 安装资格需现场确认。`,
+      compositionNoteEn: `App: ${plugin.pageAppName} (required/optional status is not stated on the page). Confirm Codex installation eligibility when installing.`,
+    } : {}),
     bestFor: hasApps ? '需要在 Codex 中使用该服务的授权资料或明确操作，并与当前任务的其他材料结合。' : '官方功能与当前任务直接相关，且能定义可检查的输出时。',
     bestForEn: hasApps ? 'When a Codex task needs authorized data or specific actions from this service alongside other task context.' : 'When the official capability directly supports a task with a verifiable output.',
     notFor: '仅凭名称判断有用；未确认账号权限、插件组成和官方能力前就授权写入。',
@@ -130,7 +152,7 @@ for (const plugin of listed) {
   detailsByCategory.get(categoryId)[plugin.id] = detail;
 }
 
-const now = new Date();
+const now = new Date(visibleSnapshot.capturedAt);
 const date = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
 const previousIds = new Set(previous?.plugins?.map((plugin) => plugin.id) ?? []);
 const addedIds = previous ? summaries.filter((plugin) => !previousIds.has(plugin.id)).map((plugin) => plugin.id) : [];
@@ -152,21 +174,25 @@ const latest = previous && addedIds.length ? {
   periodEnd: homepage.sections.find((section) => section.id === 'latest')?.periodEnd ?? date,
   basis: 'homepage',
 };
-const featuredIds = homepage.sections.find((section) => section.id === 'featured')?.plugins.map((plugin) => plugin.id).filter((id) => byId.has(id)) ?? [];
-const categories = categoryOrder.map((name) => ({
-  id: slug(name),
-  title: categoryTranslations[name.toLowerCase()]?.[0] ?? name,
+const pageCategories = [
+  ['featured', 'Featured'], ['new-and-noteworthy', 'New & Noteworthy'], ['small-business', 'Small Business'],
+  ...categoryOrder.map((name) => [slug(name).replace('business-operations', 'business-and-operations').replace('data-analytics', 'data-and-analytics').replace('education-research', 'education-and-research'), name]),
+];
+const categories = pageCategories.map(([id, name]) => ({
+  id,
+  title: (categoryTranslations[id] ?? categoryTranslations[name.toLowerCase()])?.[0] ?? name,
   titleEn: name,
-  description: categoryTranslations[name.toLowerCase()]?.[1] ?? '',
-  count: summaries.filter((plugin) => plugin.category === slug(name)).length,
+  description: (categoryTranslations[id] ?? categoryTranslations[name.toLowerCase()])?.[1] ?? '',
+  ids: visibleSnapshot.categories[id],
+  count: visibleSnapshot.categories[id].length,
 }));
 const index = {
-  source: 'Codex CLI marketplace openai-curated-remote, scope GLOBAL, discoverability LISTED',
+  source: 'Official plugin marketplace category-page plugin links; metadata from Codex marketplace cache and official detail pages',
+  scope: 'official-category-pages',
   fetchedAt: now.toISOString(),
   total: summaries.length,
   available: summaries.filter((plugin) => plugin.available).length,
   latest,
-  featuredIds,
   categories,
   comparison: { addedIds, removedIds },
   plugins: summaries,
@@ -184,19 +210,20 @@ const pendingDescriptions = allDetails.filter((plugin) => plugin.longDescription
 const pendingPrompts = allDetails.reduce((sum, plugin) => sum + plugin.defaultPromptsZh.filter((prompt) => prompt.startsWith('（翻译待补')).length, 0);
 const doc = [
   '# Codex 插件市场全量目录', '',
-  `盘点日期：${date}。来源：Codex 官方插件目录（\`openai-curated-remote\`），筛选公开列出的全局插件（\`scope=GLOBAL\`、\`discoverability=LISTED\`）。`, '',
-  `共 ${summaries.length} 个独立插件，其中当前账号可用 ${index.available} 个，${summaries.length - index.available} 个因账号或管理策略显示不可用。插件内附带的 Skill 不单独计数。不同账号或地区看到的可用性可能不同。`, '',
+  `盘点日期：${date}。范围：[官方插件市场](${visibleSnapshot.source})全部 17 个分类的展开页面（包括精选、新品与亮点、小型企业），按实际展示的插件链接 ID 去重，不直接使用本地缓存总量。插件元数据取自 Codex 官方目录和官方详情页。`, '',
+  `共 ${summaries.length} 个独立插件。专题分类与常规分类会重复收录同一插件，下表按 14 个常规分类去重列出；插件内附带的 Skill 不单独计数。缓存确认当前可用 ${index.available} 个，${summaries.filter((plugin) => plugin.available === false).length} 个显示不可用，${summaries.filter((plugin) => plugin.available === null).length} 个仅在官方页面确认可见，Codex 安装资格待确认。不同账号或地区的展示和可用性可能不同。`, '',
   `本次是首次全市场基线；之前的 142 个仅为首页陈列，不能用 ${summaries.length - 142} 的差值推断新上架。${latest.basis === 'homepage' ? `「最新」暂沿用 ${latest.periodStart} 至 ${latest.periodEnd} 的首页变化记录。` : `全市场与 ${latest.periodStart} 基线相比新增 ${addedIds.length} 个、移出 ${removedIds.length} 个。`}`, '',
   '官网链接取自插件官方目录字段；未提供的条目明确标注“未提供”。中文简介以官方说明翻译和概括为基础，并非逐项独立测评。', '',
   `翻译状态：所有插件的短简介与下表简介均有中文；${pendingDescriptions} 条官方完整说明和 ${pendingPrompts} 条官方示例任务仍待补译，网站详情中保留英文原文并明确标注。`, '',
 ];
-for (const category of categories) {
+for (const category of categories.slice(3)) {
   doc.push(`## ${category.title} · ${category.titleEn}（${category.count}）`, '', '| 插件名 | 官网链接 | 简介 |', '| --- | --- | --- |');
-  for (const plugin of summaries.filter((item) => item.category === category.id)) {
+  for (const id of category.ids) {
+    const plugin = summaries.find((item) => item.id === id);
     const website = plugin.websiteUrl ? `[访问官网](${plugin.websiteUrl})` : '未提供';
     doc.push(`| ${cell(plugin.name)} | ${website} | ${cell(plugin.productIntro || plugin.description)} |`);
   }
   doc.push('');
 }
 await writeFile(new URL('../docs/当前插件目录.md', import.meta.url), `${doc.join('\n').trimEnd()}\n`);
-console.log(`Synced ${summaries.length} listed plugins in ${categories.length} categories; ${addedIds.length} new since full-market baseline; ${Object.keys(translations).length} cached translations.`);
+console.log(`Synced ${summaries.length} visible plugins from ${categories.length} category pages; ${addedIds.length} new since valid full-market baseline; ${Object.keys(translations).length} cached translations.`);

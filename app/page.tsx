@@ -47,7 +47,7 @@ export default function Home() {
     heroBody: '按 Codex 插件市场的全部公开分类整理插件。保留官方名称、图标和说明，补上中文用途介绍，并可生成安装 Prompt。',
     principleLabel: '目录口径',
     principleTitle: `公开目录 ${market?.total ?? '…'} 个`,
-    principleBody: `首页只是部分陈列；这里统计官方目录 ${nativeSectionCount} 个分类中公开列出的 ${market?.total ?? '…'} 个独立插件。内部 Skill 不重复计数，账号资格可能影响安装。`,
+    principleBody: `首页只是入口；这里覆盖官方 ${nativeSectionCount} 个分类展开页实际展示的全部 ${market?.total ?? '…'} 个独立插件。专题分类中的重复条目、内部 Skill 不重复计数。`,
     flowHome: '插件市场',
     flowCategory: `${nativeSectionCount} 个分类`,
     flowAll: '全量目录',
@@ -57,6 +57,7 @@ export default function Home() {
     result: (visibleCount: number, totalCount: number) => `当前显示 ${visibleCount} / ${totalCount} 个独立插件`,
     loadMore: '加载更多插件',
     unavailable: '当前账号不可用',
+    eligibilityUnknown: 'Codex 安装资格待确认',
     loading: '正在加载完整目录…',
     loadError: '目录加载失败，请刷新页面重试。',
     clearFilter: '清除筛选',
@@ -92,7 +93,7 @@ export default function Home() {
     copiedInstall: '已复制，回 Codex 粘贴',
     copyInstall: '复制安装 Prompt',
     panelNote: 'Prompt 会先检查当前状态与权限，获得你确认后才安装。',
-    footerSource: `数据源：Codex 插件市场公开列出的全局插件。最后同步：${snapshotDate}。插件内部的 Skill 不单独计数。`,
+    footerSource: `数据源：官方插件市场全部分类展开页，按插件 ID 去重；官方目录与详情页提供元数据。最后盘点：${snapshotDate}。Skill 不单独计数。`,
     footerCaveat: '首次全市场盘点作为基线；「最新」目前标记上次与本次首页盘点间新出现的插件，不等同于新上架。插件可用性、账号资格与权限会变化；安装结果以 Codex 当时返回为准。',
   } : {
     switchLabel: 'Switch to Chinese',
@@ -107,7 +108,7 @@ export default function Home() {
     heroBody: 'Explore every publicly listed plugin across the Codex marketplace categories. Official names, icons, and descriptions stay intact, with Chinese explanations and an installation prompt.',
     principleLabel: 'DIRECTORY SCOPE',
     principleTitle: `${market?.total ?? '…'} publicly listed`,
-    principleBody: `The homepage shows only a selection. This directory covers ${market?.total ?? '…'} distinct publicly listed plugins in ${nativeSectionCount} marketplace categories. Bundled Skills are not counted separately.`,
+    principleBody: `The homepage is only an entry point. This directory covers all ${market?.total ?? '…'} distinct plugins shown across ${nativeSectionCount} official category pages. Overlapping curated entries and bundled Skills are not counted twice.`,
     flowHome: 'Marketplace',
     flowCategory: `${nativeSectionCount} categories`,
     flowAll: 'Full directory',
@@ -117,6 +118,7 @@ export default function Home() {
     result: (visibleCount: number, totalCount: number) => `Showing ${visibleCount} / ${totalCount} unique plugins`,
     loadMore: 'Load more plugins',
     unavailable: 'Unavailable for this account',
+    eligibilityUnknown: 'Confirm Codex eligibility',
     loading: 'Loading the full catalog…',
     loadError: 'The catalog could not load. Please refresh the page.',
     clearFilter: 'Clear filters',
@@ -152,7 +154,7 @@ export default function Home() {
     copiedInstall: 'Copied — paste it back into Codex',
     copyInstall: 'Copy install prompt',
     panelNote: 'The prompt checks the current state and permissions first, then waits for your confirmation before installing.',
-    footerSource: `Source: globally listed plugins in the Codex marketplace. Last synced: ${snapshotDate}. Skills bundled inside a plugin are not counted separately.`,
+    footerSource: `Source: all official marketplace category pages, deduplicated by plugin ID; metadata from the official catalog and detail pages. Last scanned: ${snapshotDate}. Skills are not counted separately.`,
     footerCaveat: 'The first full-market scan is a baseline. “Latest” currently reflects plugins newly shown on the home page, not new releases. Availability and permissions vary; Codex is authoritative at installation.',
   };
 
@@ -160,15 +162,13 @@ export default function Home() {
   const selected = market?.plugins.filter((plugin) => selectedIds.includes(plugin.id)) ?? [];
   const { visibleSections, matchingCount } = useMemo(() => {
     if (!market) return { visibleSections: [], matchingCount: 0 };
-    const ids = activeCategory === 'latest' ? new Set(market.latest.ids) : activeCategory === 'featured' ? new Set(market.featuredIds) : null;
-    const matches = market.plugins.filter((plugin) =>
-      (activeCategory === 'all' || ids?.has(plugin.id) || plugin.category === activeCategory) &&
-      (!normalizedQuery || `${plugin.name} ${plugin.description} ${plugin.originalDescription} ${plugin.productIntro} ${plugin.productIntroEn}`.toLowerCase().includes(normalizedQuery)));
     const category = market.categories.find((item) => item.id === activeCategory);
+    const ids = activeCategory === 'latest' ? new Set(market.latest.ids) : new Set(category?.ids ?? []);
+    const matches = market.plugins.filter((plugin) =>
+      (activeCategory === 'all' || ids.has(plugin.id)) &&
+      (!normalizedQuery || `${plugin.name} ${plugin.description} ${plugin.originalDescription} ${plugin.productIntro} ${plugin.productIntroEn}`.toLowerCase().includes(normalizedQuery)));
     const section = activeCategory === 'latest' ? {
       id: 'latest', slug: 'latest', title: '最新', titleEn: 'Latest', description: market.latest.basis === 'homepage' ? '两次首页盘点之间新出现的插件；不代表新上架。' : '相较上次全市场盘点新增的插件。', descriptionEn: market.latest.basis === 'homepage' ? 'Newly shown between homepage snapshots; not necessarily newly released.' : 'New since the last full-market scan.',
-    } : activeCategory === 'featured' ? {
-      id: 'featured', slug: 'featured', title: '精选', titleEn: 'Featured', description: 'Codex 当前首页重点展示的插件。', descriptionEn: 'Plugins currently featured on the Codex home page.',
     } : category ? {
       id: category.id, slug: category.id, title: category.title, titleEn: category.titleEn, description: category.description, descriptionEn: category.titleEn,
     } : {
@@ -279,7 +279,6 @@ export default function Home() {
       <nav className="category-nav" aria-label={copy.categoryAria}>
         <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => changeCategory('all')}>{copy.allCategories}</button>
         {market && <button className={activeCategory === 'latest' ? 'active' : ''} onClick={() => changeCategory('latest')}>{language === 'zh' ? '最新' : 'Latest'}<span>{market.latest.ids.length}</span></button>}
-        {market && <button className={activeCategory === 'featured' ? 'active' : ''} onClick={() => changeCategory('featured')}>{language === 'zh' ? '精选' : 'Featured'}<span>{market.featuredIds.length}</span></button>}
         {market?.categories.map((category) => <button key={category.id} className={activeCategory === category.id ? 'active' : ''} onClick={() => changeCategory(category.id)}>{language === 'zh' ? category.title : category.titleEn}<span>{category.count}</span></button>)}
         <label className="search-field nav-search"><span>⌕</span><input value={query} onChange={(event) => changeQuery(event.target.value)} placeholder={copy.searchPlaceholder} /></label>
       </nav>
@@ -308,12 +307,12 @@ export default function Home() {
                     const introText = language === 'zh' ? plugin.productIntro : plugin.productIntroEn;
                     const introIsLong = introText.length > (language === 'zh' ? 118 : 190);
                     const compositionOpen = openCompositionDetail === detailKey;
-                    const hasCompositionFacts = fullPlugin && (fullPlugin.requiredAppCount > 0 || fullPlugin.optionalAppCount > 0 || fullPlugin.skillCount > 0 || fullPlugin.templateCount > 0);
+                    const hasCompositionFacts = fullPlugin && (fullPlugin.compositionNote || fullPlugin.requiredAppCount > 0 || fullPlugin.optionalAppCount > 0 || fullPlugin.skillCount > 0 || fullPlugin.templateCount > 0);
                     return (
                       <article className={`plugin-card ${isSelected ? 'selected' : ''}`} key={`${section.id}-${plugin.id}`}>
                         <div className="plugin-card-head">
                           <Image className="plugin-icon" src={plugin.icon} alt="" width={56} height={56} unoptimized />
-                          <span className="plugin-copy"><strong>{plugin.name}</strong><span>{language === 'zh' ? plugin.description : plugin.originalDescription}</span>{!plugin.available && <small className="plugin-unavailable">{copy.unavailable}</small>}</span>
+                          <span className="plugin-copy"><strong>{plugin.name}</strong><span>{language === 'zh' ? plugin.description : plugin.originalDescription}</span>{plugin.available !== true && <small className="plugin-unavailable">{plugin.available === null ? copy.eligibilityUnknown : copy.unavailable}</small>}</span>
                           <button className="details-toggle" onClick={() => toggleDetails(plugin)} disabled={loadingDetailId === plugin.id} aria-expanded={detailsOpen} aria-controls={`detail-${detailKey}`}>
                             {loadingDetailId === plugin.id ? '…' : detailsOpen ? copy.closeDetails : copy.details}
                           </button>
@@ -342,6 +341,7 @@ export default function Home() {
                                   <div className="composition-popover">
                                     <button className="composition-detail-trigger" onClick={() => setOpenCompositionDetail(compositionOpen ? null : detailKey)} aria-expanded={compositionOpen} aria-controls={`composition-${detailKey}`}>{compositionOpen ? copy.hideComponentDetails : copy.componentDetails}</button>
                                     {compositionOpen && <div className="composition-popover-panel" id={`composition-${detailKey}`} role="dialog" aria-label={`${plugin.name} ${copy.componentDetails}`}>
+                                      {fullPlugin.compositionNote && <p>{language === 'zh' ? fullPlugin.compositionNote : fullPlugin.compositionNoteEn}</p>}
                                       {fullPlugin.requiredAppCount > 0 && <dl><dt>{copy.requiredApp}</dt><dd>{fullPlugin.requiredApps.length > 0 ? fullPlugin.requiredApps.join(' · ') : copy.unnamed(fullPlugin.requiredAppCount)}</dd></dl>}
                                       {fullPlugin.optionalAppCount > 0 && <dl><dt>{copy.optionalApp}</dt><dd>{fullPlugin.optionalApps.length > 0 ? fullPlugin.optionalApps.join(' · ') : copy.unnamed(fullPlugin.optionalAppCount)}</dd></dl>}
                                       {fullPlugin.skillCount > 0 && <dl><dt>{copy.skillLabel}</dt><dd>{fullPlugin.skillNames.length > 0 ? fullPlugin.skillNames.join(' · ') : copy.unnamed(fullPlugin.skillCount)}</dd></dl>}

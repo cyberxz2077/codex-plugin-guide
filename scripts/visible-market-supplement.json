@@ -1,0 +1,173 @@
+{
+  "source": "Official plugin detail page DOM",
+  "capturedAt": "2026-09-26",
+  "plugins": [
+    {
+      "id": "plugin_asdk_app_6a69853c7df08191801acfc8ff769b01",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 24,
+      "pageAppName": "RevenueCat",
+      "release": {
+        "display_name": "RevenueCat",
+        "interface": {
+          "category": "Developer Tools",
+          "short_description": "Access your RevenueCat apps",
+          "long_description": "Set up RevenueCat, integrate it in your apps, and access and analyze data about your customers, revenue, purchases.",
+          "default_prompts": [
+            "What was my revenue last month?",
+            "Help me integrate RevenueCat in my app.",
+            "Look through my metrics from this week and tell me what I should pay attention to."
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_0000000058b88209bbdcd31eb338bf83&cdn=1&cp=pi&ma=32054400&ts=0&p=pi&cid=8&sig=45cf295f07861ca79c712c0fac63d4720bf033e31ff648d8d868213dc105d2cf&v=0",
+          "website_url": "https://www.revenuecat.com",
+          "developer_name": "RevenueCat"
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    },
+    {
+      "id": "plugin_asdk_app_6ab23e1df18c8191a73935c265b2ea74",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 0,
+      "pageAppName": "Omnia",
+      "release": {
+        "display_name": "Omnia",
+        "interface": {
+          "category": "Data & Analytics",
+          "short_description": "Your GEO companion",
+          "long_description": "Omnia is a GEO (Generative Engine Optimization) platform that tracks how AI models like ChatGPT, Gemini, and Perplexity perceive and cite your brand. Connect to Omnia to query brand visibility metrics, share of voice, sentiment trends, and citation data across LLM outputs. Monitor how your brand compares to competitors in AI-generated responses, track prompt-level performance over time, and pull structured analytics to inform content and positioning strategy.",
+          "default_prompts": [
+            "Summarize our AI visibility for the last 7 days. Flag any drops or gains compared to the previous week.",
+            "What does our AI visibility look like in the US compared to the UK? Break it down by engine.",
+            "Which URLs are cited most often in AI answers for our brand over the last 30 days? Break them down by AI engine."
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_00000000c878822f8172ee007671d741&cdn=1&cp=pi&ma=30585600&ts=0&p=pi&cid=8&sig=3aa8bb50ac95507ad48906db814ef95c3a5a846ebda7dc2535508976a653b7ad&v=0",
+          "website_url": "https://www.useomnia.com",
+          "developer_name": "Omnia"
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    },
+    {
+      "id": "plugin_asdk_app_6a8eab08955c8191957c0fa3659e7531",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 0,
+      "pageAppName": "Halkbank",
+      "release": {
+        "display_name": "Halkbank",
+        "interface": {
+          "category": "Finance",
+          "short_description": "Banking Products and Services",
+          "long_description": "Answers your questions about Halkbank's retail, commercial, and SME banking products and services based on the content of the bank's official websites, citing its sources. You can get information in Turkish or English on a wide range of topics, from loans to cards, from Paraf to ParafLy Travel. It cannot access personal data or account information, and cannot perform customer-specific transactions.",
+          "default_prompts": [
+            "İhtiyaç kredisi nasıl alınır?",
+            "Güncel kampanyalar neler?",
+            "ParafPara nasıl kazanılır?"
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_000000005c7081f4970294dce05c289c&cdn=1&cp=pi&ma=31363200&ts=0&p=pi&cid=8&sig=efa94882c429b6df9a60cdfd79564a3b85e34449da82955481e482d799354144&v=0",
+          "website_url": "https://www.halkbank.com.tr/",
+          "developer_name": "Türkiye Halk Bankası A.Ş."
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    },
+    {
+      "id": "plugin_connector_1p_e569f8b8dfd08191903c9bd2cd7da9ac",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 1,
+      "pageAppName": "Health",
+      "release": {
+        "display_name": "Health",
+        "interface": {
+          "category": "Healthcare",
+          "short_description": "Explore your health data in ChatGPT",
+          "long_description": "Connect supported medical records and Apple Health data to ground ChatGPT conversations in your health information, understand results in context, and follow changes in labs, sleep, and activity over time.",
+          "default_prompts": [
+            "Summarize my health history.",
+            "Help me understand my most recent lab results.",
+            "What sleep patterns stand out recently?"
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_00000000e6cc81f594362a5b2b4599ac&cdn=1&cp=pi&ma=31795200&ts=0&p=pi&cid=8&sig=ebfac3a06fc1cfbcf4c72a060776259aae7270b52b6ea239d528333843e8f645&v=0",
+          "website_url": "https://openai.com/",
+          "developer_name": "OpenAI"
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    },
+    {
+      "id": "plugin_asdk_app_6a843fdbbb088191a6e7908ab846b92d",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 0,
+      "pageAppName": "AIVI",
+      "release": {
+        "display_name": "AIVI",
+        "interface": {
+          "category": "Other",
+          "short_description": "Your Personal Gulf Stylist",
+          "long_description": "AIVI is a fashion shopping assistant for UAE, Saudi Arabia, Qatar, Kuwait, Bahrain, and Oman. Users can browse broad categories with diversified themed groups, search with specific filters (brand, color, size, price), look up detailed product attributes for items already shown, and get authoritative answers to customer-service questions and shipping or return policies - all through natural conversation in ChatGPT.",
+          "default_prompts": [
+            "Date night is loading... I need a look I'll actually love",
+            "My taste? Authentic only... show me the real deal."
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_00000000f9e4820a94d1cad23dbc1eca&cdn=1&cp=pi&ma=31795200&ts=0&p=pi&cid=8&sig=200a546a29ef34275674fc6bf9df26316bb76c6326dffa72593d854a44064ed6&v=0",
+          "website_url": "https://www.aivi.com/",
+          "developer_name": "6thstreet"
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    },
+    {
+      "id": "plugin_asdk_app_6aa2284cac4481918fa0eed9d385c7ec",
+      "scope": "GLOBAL",
+      "status": "UNVERIFIED",
+      "pageSkillCount": 0,
+      "pageAppName": "Vainqueur Cheval",
+      "release": {
+        "display_name": "Vainqueur Cheval",
+        "interface": {
+          "category": "Other",
+          "short_description": "Configure equestrian jackets",
+          "long_description": "Configure made-to-order Show Jumping and Dressage jackets with Vainqueur Cheval’s official catalog, options, sizing paths, and server-calculated prices. Review every detail in the 3D Atelier before checkout. The plugin does not place orders or process payments.",
+          "default_prompts": [
+            "Show me Vainqueur women’s Show Jumping jacket options and prices for delivery to Brazil.",
+            "Configure a classic Dressage jacket in dark green and tell me which details are still missing.",
+            "Create a Vainqueur Atelier review link after I approve the final jacket quote."
+          ],
+          "logo_url": "https://files.openai.com/content?id=file_000000000b60820ead296e6d5c172485&cdn=1&cp=pi&ma=32572800&ts=0&p=pi&cid=8&sig=284d7f8472cbfd41145ed8559d3f9b98c70924b96cb8400ee92411b2f4ea2e35&v=0",
+          "website_url": "https://vainqueurcheval.com/",
+          "developer_name": "Vainqueur Cheval"
+        },
+        "app_manifest": {
+          "apps": {}
+        },
+        "skills": [],
+        "app_templates": []
+      }
+    }
+  ]
+}
