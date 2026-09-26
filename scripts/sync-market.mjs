@@ -108,7 +108,7 @@ for (const plugin of listed) {
     available: plugin.status === 'UNVERIFIED' ? null : plugin.status === 'AVAILABLE',
   };
   const prompts = official.default_prompts ?? [];
-  const detail = known ? {
+  const detail = known && plugin.status !== 'UNVERIFIED' ? {
     ...known,
     ...summary,
     longDescription: longEn,
